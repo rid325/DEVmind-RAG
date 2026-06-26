@@ -26,10 +26,7 @@ MAX_RESULTS_PER_QUERY = 50
 
 
 def fetch_arxiv_papers(query: str, max_results: int) -> list[arxiv.Result]:
-    """
-    Calls arXiv API for a given query.
-    Returns a list of arxiv.Result objects.
-    """
+
     client = arxiv.Client(
         page_size=100,
         delay_seconds=3, 
@@ -48,10 +45,7 @@ def fetch_arxiv_papers(query: str, max_results: int) -> list[arxiv.Result]:
 
 
 def paper_exists(db: Session, arxiv_id: str) -> bool:
-    """
-    Check if we've already ingested this paper.
-    arXiv IDs are unique — use them to avoid duplicates.
-    """
+    
     return db.query(Document).filter(
         Document.parent_doc_id == arxiv_id,
         Document.domain == "arxiv"
@@ -59,11 +53,7 @@ def paper_exists(db: Session, arxiv_id: str) -> bool:
 
 
 def result_to_document(result: arxiv.Result) -> Document:
-    """
-    Converts one arXiv result into a Document model instance.
-    We're storing the abstract as content for now.
-    Full text PDF parsing comes later — abstracts are enough to start.
-    """
+  
     arxiv_id = result.entry_id.split("/")[-1]  
 
     metadata = {
@@ -89,11 +79,7 @@ def result_to_document(result: arxiv.Result) -> Document:
 
 
 def ingest_arxiv_papers(db: Session) -> dict:
-    """
-    Main ingestion function. Loops over all queries,
-    fetches papers, deduplicates, and inserts to DB.
-    Returns a summary dict so the API endpoint can report results.
-    """
+    
     total_fetched = 0
     total_inserted = 0
     total_skipped = 0
