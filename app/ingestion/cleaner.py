@@ -30,19 +30,48 @@ def clean_stackoverflow_text(html: str) -> str:
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # Wrap <pre> blocks with newlines so code stays on its own lines
+    
     for pre in soup.find_all("pre"):
         pre.insert_before("\n")
         pre.insert_after("\n")
 
-    # Wrap inline <code> not inside <pre> with backticks for readability
+   
     for code in soup.find_all("code"):
         if not code.find_parent("pre"):
             code.insert_before("`")
             code.insert_after("`")
 
     text = soup.get_text(separator=" ")
-    # Collapse excessive whitespace but preserve intentional newlines
     text = re.sub(r'[ \t]+', ' ', text)
     text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
+
+import re
+
+def clean_markdown(text: str) -> str:
+    text = re.sub(
+        r"!\[.*?\]\(https?://.*?\)",
+        "",
+        text,
+    )
+    text = re.sub(
+        r"<!--.*?-->",
+        "",
+        text,
+        flags=re.DOTALL,
+    )
+
+    text = re.sub(
+        r"^https?://\S+\s*$",
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+
+    text = re.sub(
+        r"\n{3,}",
+        "\n\n",
+        text,
+    )
+
     return text.strip()
