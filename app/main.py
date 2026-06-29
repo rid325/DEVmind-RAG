@@ -6,6 +6,7 @@ from app.models import Document
 from app.ingestion.arxiv_ingester import run_arxiv_ingestion
 from app.ingestion.stackoverflow_ingester import run_stackoverflow_ingestion
 from app.ingestion.github_ingester import run_github_ingestion
+from app.ingestion.embedder import run_embedding_job
 
 app = FastAPI(title="DevMind RAG")
 
@@ -40,6 +41,13 @@ def ingest_github(
 ):
     background_tasks.add_task(run_github_ingestion)
     return {"status": "ingestion started", "message": "check logs for progress"}
+
+@app.post("/embed")
+def embed(
+    background_tasks: BackgroundTasks,
+):
+    background_tasks.add_task(run_embedding_job)
+    return {"status": "embedding job started", "message": "check logs for progress"}
 
 @app.get("/stats")
 def stats(db: Session = Depends(get_db)):
