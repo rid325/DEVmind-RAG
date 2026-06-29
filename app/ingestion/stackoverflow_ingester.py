@@ -201,8 +201,8 @@ def ingest_stackoverflow_threads(db: Session) -> dict:
     total_fetched = 0
     total_inserted = 0
     total_skipped = 0
-    total_invalid = 0  # missing question_id
-    total_missing_accepted_answer = 0  # has question_id but no accepted answer
+    total_invalid = 0  
+    total_missing_accepted_answer = 0  
 
     for tag in tqdm(STACKOVERFLOW_TAGS, desc="Processing Stack Overflow tags"):
         questions = fetch_stackoverflow_questions(tag)
