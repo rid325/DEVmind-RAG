@@ -8,6 +8,7 @@ from app.ingestion.stackoverflow_ingester import run_stackoverflow_ingestion
 from app.ingestion.github_ingester import run_github_ingestion
 from app.ingestion.embedder import run_embedding_job
 from app.retrieval.bm25_index import build_index, search
+from app.retrieval.hybrid import search_hybrid
 from app.database import SessionLocal
 
 app = FastAPI(title="DevMind RAG")
@@ -19,7 +20,7 @@ async def startup():
         conn.commit()
     Base.metadata.create_all(bind=engine)
     
-    # Build BM25 index on startup
+   
     db = SessionLocal()
     try:
         build_index(db)
@@ -73,6 +74,20 @@ def search_bm25(query: str, k: int = 5, db: Session = Depends(get_db)):
                 "content": doc.content
             })
             
+    return {"results": response}
+
+@app.get("/search/hybrid")
+def hybrid_search_endpoint(query: str, k: int = 20, db: Session = Depends(get_db)):
+    results = search_hybrid(db, query, k)
+    
+    response = []
+    for doc, score in results:
+        response.append({
+            "domain": doc.domain,
+            "content_preview": doc.content[:200],
+            "rrf_score": score
+        })
+        
     return {"results": response}
 
 @app.get("/stats")
