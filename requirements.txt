@@ -34,3 +34,4 @@ watchfiles==1.2.0
 websockets==16.0
 openai
 rank_bm25
+sentence_transformers

@@ -3,6 +3,7 @@ from app.models import Document
 from app.retrieval.dense import search_dense
 from app.retrieval.bm25_index import search as search_bm25
 from app.embeddings import get_embeddings
+from app.retrieval import reranker
 
 def rrf_merge(dense_results: list[tuple[int, float]], sparse_results: list[tuple[int, float]], rrf_k: int = 60) -> list[tuple[int, float]]:
     rrf_scores = {}
@@ -18,7 +19,7 @@ def rrf_merge(dense_results: list[tuple[int, float]], sparse_results: list[tuple
     sorted_results = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
     return sorted_results
 
-def search_hybrid(db: Session, query: str, k: int = 20) -> list[tuple[Document, float]]:
+def search_hybrid(db: Session, query: str, k: int = 20, rerank:bool = True) -> list[tuple[Document, float]]:
     query_vectors = get_embeddings([query])
     if not query_vectors:
         return []
@@ -42,5 +43,10 @@ def search_hybrid(db: Session, query: str, k: int = 20) -> list[tuple[Document, 
     for doc_id, score in top_results:
         if doc_id in doc_map:
             final_results.append((doc_map[doc_id], score))
+    
+    if rerank:
+        final_results = reranker.rerank(query, final_results, top_k=5)
+        return final_results
+    return final_results[:5]
             
-    return final_results
+    

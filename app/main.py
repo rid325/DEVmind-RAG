@@ -1,3 +1,4 @@
+import time
 from fastapi import FastAPI, Depends, BackgroundTasks
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -26,6 +27,10 @@ async def startup():
         build_index(db)
     finally:
         db.close()
+    
+    print("Loading CrossEncoder Reranker")
+    from app.retrieval import reranker
+    print(" Reranker loaded succcesfully!")
 
 @app.get("/health")
 def health():
@@ -77,18 +82,34 @@ def search_bm25(query: str, k: int = 5, db: Session = Depends(get_db)):
     return {"results": response}
 
 @app.get("/search/hybrid")
-def hybrid_search_endpoint(query: str, k: int = 20, db: Session = Depends(get_db)):
-    results = search_hybrid(db, query, k)
+def hybrid_search_endpoint(query: str, k: int = 5, rerank: bool = True, db: Session = Depends(get_db)):
+    start_time = time.time()
+    fetch_k = 20 if rerank else k
+    
+    results = search_hybrid(db, query, k=fetch_k, rerank=rerank)
+    
+    end_time = time.time()
+    print(f"Search completed in {end_time - start_time:.3f} seconds (rerank={rerank})")
     
     response = []
-    for doc, score in results:
-        response.append({
+    for item in results:
+        doc = item[0]
+        hybrid_score = item[1]
+        
+        result_dict = {
             "domain": doc.domain,
             "content_preview": doc.content[:200],
-            "rrf_score": score
-        })
+            "rrf_score": hybrid_score
+        }
+        
+        if len(item) == 3:
+            result_dict["reranker_score"] = float(item[2])
+            
+        response.append(result_dict)
         
     return {"results": response}
+
+
 
 @app.get("/stats")
 def stats(db: Session = Depends(get_db)):
