@@ -43,3 +43,6 @@ This project aims to consolidate and search technical knowledge across multiple 
    ```bash
    uvicorn app.main:app --reload --port 8001
    ```
+
+   daily check
+   
