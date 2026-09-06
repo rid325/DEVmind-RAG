@@ -1,30 +1,22 @@
-from sentence_transformers import CrossEncoder
+from functools import lru_cache
 
-model = CrossEncoder(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2",
-    max_length=512
-)
+
+@lru_cache(maxsize=1)
+def get_model():
+    from sentence_transformers import CrossEncoder
+
+    return CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=512)
 
 
 def rerank(query: str, hybrid_results: list, top_k: int = 5):
-    if not hybrid_results:
+    if not hybrid_results or top_k <= 0:
         return []
 
-    documents = []
-    hybrid_scores = []
-    pairs = []
-
-    for document, score in hybrid_results:
-        documents.append(document)
-        hybrid_scores.append(score)
-
-    for document in documents:
-        pairs.append([query, document.content])
-
-    reranker_scores = model.predict(pairs)
-
-    combined = list(zip(documents, hybrid_scores, reranker_scores))
-
-    combined.sort(key=lambda x: x[2], reverse=True)
-
-    return combined[:top_k]
+    pairs = [[query, document.content] for document, _ in hybrid_results]
+    scores = get_model().predict(pairs)
+    results = [
+        (document, hybrid_score, float(score))
+        for (document, hybrid_score), score in zip(hybrid_results, scores)
+    ]
+    results.sort(key=lambda item: item[2], reverse=True)
+    return results[:top_k]

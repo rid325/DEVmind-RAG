@@ -1,5 +1,8 @@
+import logging
 import time
-from fastapi import FastAPI, Depends, BackgroundTasks
+from contextlib import asynccontextmanager
+from typing import Annotated
+from fastapi import FastAPI, Depends, BackgroundTasks, Query, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import engine, Base, get_db
@@ -12,25 +15,35 @@ from app.retrieval.bm25_index import build_index, search
 from app.retrieval.hybrid import search_hybrid
 from app.database import SessionLocal
 
-app = FastAPI(title="DevMind RAG")
-
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     with engine.connect() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.commit()
     Base.metadata.create_all(bind=engine)
-    
-   
+
+
     db = SessionLocal()
     try:
         build_index(db)
     finally:
         db.close()
-    
-    print("Loading CrossEncoder Reranker")
-    from app.retrieval import reranker
-    print(" Reranker loaded succcesfully!")
+
+    yield
+
+
+app = FastAPI(title="DevMind RAG", lifespan=lifespan)
+
+
+def validate_query(query: Annotated[str, Query(min_length=1, max_length=2000)]) -> str:
+    query = query.strip()
+    if not query:
+        raise HTTPException(status_code=422, detail="Query must not be blank")
+    return query
+
+
+SearchQuery = Annotated[str, Depends(validate_query)]
+ResultCount = Annotated[int, Query(ge=1, le=100)]
 
 @app.get("/health")
 def health():
@@ -56,7 +69,7 @@ def ingest_github(
 ):
     background_tasks.add_task(run_github_ingestion)
     return {"status": "ingestion started", "message": "check logs for progress"}
- 
+
 @app.post("/embed")
 def embed(
     background_tasks: BackgroundTasks,
@@ -65,9 +78,9 @@ def embed(
     return {"status": "embedding job started", "message": "check logs for progress"}
 
 @app.get("/search/bm25")
-def search_bm25(query: str, k: int = 5, db: Session = Depends(get_db)):
+def search_bm25(query: SearchQuery, k: ResultCount = 5, db: Session = Depends(get_db)):
     results = search(query, k)
-    
+
     response = []
     for doc_id, score in results:
         doc = db.query(Document).filter(Document.id == doc_id).first()
@@ -76,39 +89,43 @@ def search_bm25(query: str, k: int = 5, db: Session = Depends(get_db)):
                 "id": doc.id,
                 "domain": doc.domain,
                 "score": score,
+                "source_url": doc.source_url,
+                "metadata": doc.metadata_,
                 "content": doc.content
             })
-            
+
     return {"results": response}
 
 @app.get("/search/hybrid")
-def hybrid_search_endpoint(query: str, k: int = 5, rerank: bool = True, db: Session = Depends(get_db)):
+def hybrid_search_endpoint(query: SearchQuery, k: ResultCount = 5, rerank: bool = True, hyde: bool = True, db: Session = Depends(get_db)):
     start_time = time.time()
-    fetch_k = 20 if rerank else k
-    
-    results = search_hybrid(db, query, k=fetch_k, rerank=rerank)
-    
+
+    results = search_hybrid(db, query, k=k, rerank=rerank, use_hyde=hyde)
+
     end_time = time.time()
-    print(f"Search completed in {end_time - start_time:.3f} seconds (rerank={rerank})")
-    
+    logging.info("Search completed in %.3f seconds (rerank=%s, hyde=%s)", end_time - start_time, rerank, hyde)
+
     response = []
     for item in results:
         doc = item[0]
         hybrid_score = item[1]
-        
+
         result_dict = {
+            "id": doc.id,
             "domain": doc.domain,
+            "source_url": doc.source_url,
+            "metadata": doc.metadata_,
+            "content": doc.content,
             "content_preview": doc.content[:200],
             "rrf_score": hybrid_score
         }
-        
+
         if len(item) == 3:
             result_dict["reranker_score"] = float(item[2])
-            
-        response.append(result_dict)
-        
-    return {"results": response}
 
+        response.append(result_dict)
+
+    return {"results": response}
 
 
 @app.get("/stats")
@@ -117,7 +134,7 @@ def stats(db: Session = Depends(get_db)):
     arxiv_count = db.query(Document).filter(Document.domain == "arxiv").count()
     stackoverflow_count = db.query(Document).filter(Document.domain == "stackoverflow").count()
     github_count = db.query(Document).filter(Document.domain == "github").count()
-    embedded = db.query(Document).filter(Document.embedding != None).count()
+    embedded = db.query(Document).filter(Document.embedding.is_not(None)).count()
 
     return {
         "total_documents": total,
