@@ -3,6 +3,8 @@ import time
 from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import FastAPI, Depends, BackgroundTasks, Query, HTTPException
+from openai import APIError, APITimeoutError
+from app.generation.generator import GenerationError, QueryRequest, QueryResponse, generate_answer
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import engine, Base, get_db
@@ -146,3 +148,14 @@ def stats(db: Session = Depends(get_db)):
         "embedded": embedded,
         "pending_embedding": total - embedded
     }
+
+
+@app.post("/query", response_model=QueryResponse)
+def query_endpoint(request: QueryRequest, db: Session = Depends(get_db)):
+    try:
+        return generate_answer(db, request.query, use_hyde=request.use_hyde, use_reranking=request.use_reranking)
+    except APITimeoutError as exc:
+        raise HTTPException(status_code=504, detail="The model request timed out. Please try again.") from exc
+    except (APIError, GenerationError) as exc:
+        logging.warning("Query failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="Could not generate an answer. Please try again.") from exc
