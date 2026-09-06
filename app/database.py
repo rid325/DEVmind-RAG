@@ -5,7 +5,7 @@ import os
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://devmind:devmind@localhost:5432/devmind")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://devmind:devmind@localhost:5433/devmind")
 
 engine = create_engine(DATABASE_URL)
 

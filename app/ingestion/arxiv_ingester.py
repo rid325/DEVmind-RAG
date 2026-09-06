@@ -4,6 +4,7 @@ from tqdm import tqdm
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import Document
+from app.ingestion.chunker import split_document
 from app.ingestion.cleaner import clean_arxiv_text, clean_title
 
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +30,7 @@ def fetch_arxiv_papers(query: str, max_results: int) -> list[arxiv.Result]:
 
     client = arxiv.Client(
         page_size=100,
-        delay_seconds=3, 
+        delay_seconds=3,
         num_retries=3
     )
 
@@ -45,7 +46,7 @@ def fetch_arxiv_papers(query: str, max_results: int) -> list[arxiv.Result]:
 
 
 def paper_exists(db: Session, arxiv_id: str) -> bool:
-    
+
     return db.query(Document).filter(
         Document.parent_doc_id == arxiv_id,
         Document.domain == "arxiv"
@@ -53,19 +54,19 @@ def paper_exists(db: Session, arxiv_id: str) -> bool:
 
 
 def result_to_document(result: arxiv.Result) -> Document:
-  
-    arxiv_id = result.entry_id.split("/")[-1]  
+
+    arxiv_id = result.entry_id.split("/")[-1]
 
     metadata = {
         "title": clean_title(result.title),
-        "authors": [str(a) for a in result.authors[:5]], 
+        "authors": [str(a) for a in result.authors[:5]],
         "published": result.published.isoformat() if result.published else None,
         "categories": result.categories,
         "arxiv_id": arxiv_id,
         "pdf_url": result.pdf_url,
     }
 
-    content = clean_arxiv_text(result.summary)  
+    content = clean_arxiv_text(result.summary)
 
     return Document(
         content=content,
@@ -79,7 +80,7 @@ def result_to_document(result: arxiv.Result) -> Document:
 
 
 def ingest_arxiv_papers(db: Session) -> dict:
-    
+
     total_fetched = 0
     total_inserted = 0
     total_skipped = 0
@@ -97,8 +98,9 @@ def ingest_arxiv_papers(db: Session) -> dict:
                 continue
 
             doc = result_to_document(result)
-            db.add(doc)
-            total_inserted += 1
+            chunks = split_document(doc)
+            db.add_all(chunks)
+            total_inserted += len(chunks)
 
 
         db.commit()
@@ -118,4 +120,10 @@ def run_arxiv_ingestion() -> dict:
     try:
         return ingest_arxiv_papers(db)
     finally:
-        db.close()
+        db.rollback()
+        try:
+            # Include batches committed before an interrupted ingestion.
+            from app.retrieval.bm25_index import build_index
+            build_index(db)
+        finally:
+            db.close()

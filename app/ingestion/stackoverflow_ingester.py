@@ -8,6 +8,7 @@ from tqdm import tqdm
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import Document
+from app.ingestion.chunker import split_document
 from app.ingestion.cleaner import clean_stackoverflow_text, clean_title
 
 
@@ -201,8 +202,8 @@ def ingest_stackoverflow_threads(db: Session) -> dict:
     total_fetched = 0
     total_inserted = 0
     total_skipped = 0
-    total_invalid = 0  
-    total_missing_accepted_answer = 0  
+    total_invalid = 0
+    total_missing_accepted_answer = 0
 
     for tag in tqdm(STACKOVERFLOW_TAGS, desc="Processing Stack Overflow tags"):
         questions = fetch_stackoverflow_questions(tag)
@@ -225,8 +226,9 @@ def ingest_stackoverflow_threads(db: Session) -> dict:
                 total_missing_accepted_answer += 1
                 continue
 
-            db.add(doc)
-            total_inserted += 1
+            chunks = split_document(doc)
+            db.add_all(chunks)
+            total_inserted += len(chunks)
 
         db.commit()
         logger.info(f"Committed Stack Overflow batch for tag: '{tag}'")
@@ -247,5 +249,11 @@ def run_stackoverflow_ingestion() -> dict:
     try:
         return ingest_stackoverflow_threads(db)
     finally:
-        db.close()
+        db.rollback()
+        try:
+            # Include batches committed before an interrupted ingestion.
+            from app.retrieval.bm25_index import build_index
+            build_index(db)
+        finally:
+            db.close()
 

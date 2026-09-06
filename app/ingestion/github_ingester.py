@@ -100,8 +100,6 @@ def ingest_github_repos(db: Session) -> dict:
         chunks=chunk_readme(clean_readme,repo_name)
         repo_chunks_count = 0
         for chunk in chunks:
-            if len(chunk["content"]) < 50 :
-                continue
             doc=Document(
                 content=chunk["content"],
                 domain="github",
@@ -128,4 +126,10 @@ def run_github_ingestion() -> dict:
     try:
         return ingest_github_repos(db)
     finally:
-        db.close()
+        db.rollback()
+        try:
+            # Include batches committed before an interrupted ingestion.
+            from app.retrieval.bm25_index import build_index
+            build_index(db)
+        finally:
+            db.close()
