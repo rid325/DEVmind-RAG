@@ -58,6 +58,12 @@ class QueryResponse(BaseModel):
     hyde_query: str
     retrieval_scores: list[RetrievalScore]
     latency_ms: float
+    log_id: int | None = None
+    citation_valid: bool | None = None
+    faithfulness_score: float | None = None
+    expanded_query: str = Field(default="", exclude=True)
+    chunks_retrieved: int = Field(default=0, exclude=True)
+    stage_latency_ms: dict[str, float] = Field(default_factory=dict, exclude=True)
 
 
 class GeneratedAnswer(BaseModel):
@@ -133,7 +139,8 @@ def generate_answer(db: Session, query: str, use_hyde: bool = True, use_rerankin
     start = perf_counter()
     enhanced = asyncio.run(process_query(query, use_hyde=use_hyde))
     understood = perf_counter()
-    results = search_hybrid(db, query, k=5, rerank=use_reranking, use_hyde=use_hyde, enhanced=enhanced)
+    timings = {}
+    results = search_hybrid(db, query, k=5, rerank=use_reranking, use_hyde=use_hyde, enhanced=enhanced, timings=timings)
     retrieved = perf_counter()
     context, sources = assemble_context(results)
     assembled = perf_counter()
@@ -186,7 +193,14 @@ def generate_answer(db: Session, query: str, use_hyde: bool = True, use_rerankin
         (understood-start)*1000, (retrieved-understood)*1000, (assembled-retrieved)*1000,
         (end-assembled)*1000, (end-start)*1000,
     )
+    timings.update(
+        understanding=round((understood-start)*1000, 2),
+        retrieval=round((retrieved-understood)*1000, 2),
+        context=round((assembled-retrieved)*1000, 2),
+        generation=round((end-assembled)*1000, 2),
+    )
     return QueryResponse(
         answer=answer, sources=sources, query=query, hyde_query=enhanced.hyde_passage,
         retrieval_scores=scores, latency_ms=round((end-start)*1000, 2),
+        expanded_query=enhanced.expanded_query, chunks_retrieved=len(results), stage_latency_ms=timings,
     )

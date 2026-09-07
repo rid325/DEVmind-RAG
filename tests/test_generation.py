@@ -96,7 +96,12 @@ class GeneratorTests(unittest.TestCase):
 
 class EndpointTests(unittest.TestCase):
     def setUp(self):
-        main.app.dependency_overrides[main.get_db] = lambda: MagicMock()
+        self.db = MagicMock()
+        self.db.add.side_effect = lambda log: setattr(log, 'id', 123)
+        main.app.dependency_overrides[main.get_db] = lambda: self.db
+        job = patch.object(main, 'run_faithfulness_job')
+        job.start()
+        self.addCleanup(job.stop)
         self.addCleanup(main.app.dependency_overrides.clear)
         self.client = TestClient(main.app)
         self.addCleanup(self.client.close)

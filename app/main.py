@@ -8,7 +8,9 @@ from app.generation.generator import GenerationError, QueryRequest, QueryRespons
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import engine, Base, get_db
-from app.models import Document
+from app.models import Document, QueryLog
+from app.evaluation.citation_verifier import verify_citations
+from app.evaluation.faithfulness import run_faithfulness_job
 from app.ingestion.arxiv_ingester import run_arxiv_ingestion
 from app.ingestion.stackoverflow_ingester import run_stackoverflow_ingestion
 from app.ingestion.github_ingester import run_github_ingestion
@@ -150,12 +152,84 @@ def stats(db: Session = Depends(get_db)):
     }
 
 
+def record_generation_failure(db: Session, request: QueryRequest, start: float, error: Exception):
+    db.rollback()
+    db.add(QueryLog(
+        query=request.query,
+        total_latency_ms=round((time.perf_counter() - start) * 1000, 2),
+        faithfulness_status="generation_failed",
+        evaluation_error=type(error).__name__,
+        config={"use_hyde": request.use_hyde, "use_reranking": request.use_reranking},
+    ))
+    db.commit()
+
+
 @app.post("/query", response_model=QueryResponse)
-def query_endpoint(request: QueryRequest, db: Session = Depends(get_db)):
+def query_endpoint(request: QueryRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    start = time.perf_counter()
     try:
-        return generate_answer(db, request.query, use_hyde=request.use_hyde, use_reranking=request.use_reranking)
+        result = generate_answer(db, request.query, use_hyde=request.use_hyde, use_reranking=request.use_reranking)
     except APITimeoutError as exc:
+        record_generation_failure(db, request, start, exc)
         raise HTTPException(status_code=504, detail="The model request timed out. Please try again.") from exc
     except (APIError, GenerationError) as exc:
+        record_generation_failure(db, request, start, exc)
         logging.warning("Query failed: %s", type(exc).__name__)
         raise HTTPException(status_code=502, detail="Could not generate an answer. Please try again.") from exc
+
+    citation_start = time.perf_counter()
+    citations = verify_citations(result.answer, result.sources)
+    result.citation_valid = citations["all_citations_valid"]
+    stages = dict(result.stage_latency_ms)
+    stages["citation_verification"] = round((time.perf_counter() - citation_start) * 1000, 2)
+    log_start = time.perf_counter()
+    log = QueryLog(
+        query=request.query,
+        hyde_query=result.hyde_query,
+        expanded_query=result.expanded_query,
+        chunks_retrieved=result.chunks_retrieved,
+        reranker_scores=[score.model_dump() for score in result.retrieval_scores],
+        answer=result.answer,
+        sources=[source.model_dump() for source in result.sources],
+        citation_valid=result.citation_valid,
+        citation_details=citations,
+        faithfulness_status="pending",
+        total_latency_ms=result.latency_ms,
+        config={"use_hyde": request.use_hyde, "use_reranking": request.use_reranking},
+    )
+    db.add(log)
+    db.flush()
+    result.log_id = log.id
+    stages["logging"] = round((time.perf_counter() - log_start) * 1000, 2)
+    result.latency_ms = round((time.perf_counter() - start) * 1000, 2)
+    log.total_latency_ms = result.latency_ms
+    log.stage_latency_ms = stages
+    db.commit()
+    background_tasks.add_task(run_faithfulness_job, result.log_id)
+    # Faithfulness is deliberately null here; the background task updates the log.
+    return result
+
+
+@app.get("/query/{log_id}/faithfulness")
+def get_faithfulness(log_id: int, db: Session = Depends(get_db)):
+    log = db.get(QueryLog, log_id)
+    if log is None:
+        raise HTTPException(status_code=404, detail="Query log not found")
+    return {
+        "log_id": log.id,
+        "status": log.faithfulness_status,
+        "faithfulness_score": log.faithfulness_score,
+        "claims": log.faithfulness_claims,
+        "citation_valid": log.citation_valid,
+        "evaluation_error": log.evaluation_error,
+        "faithfulness_latency_ms": log.faithfulness_latency_ms,
+    }
+
+
+@app.get("/logs")
+def recent_logs(limit: Annotated[int, Query(ge=1, le=100)] = 20, db: Session = Depends(get_db)):
+    logs = db.query(QueryLog).order_by(QueryLog.created_at.desc(), QueryLog.id.desc()).limit(limit).all()
+    return {"logs": [
+        {column.name: getattr(log, column.name) for column in QueryLog.__table__.columns}
+        for log in logs
+    ]}
