@@ -1,0 +1,3357 @@
+{
+  "experiment_a": {
+    "id": 1,
+    "name": "baseline",
+    "config": {
+      "use_hyde": false,
+      "use_expansion": false,
+      "use_reranking": false
+    },
+    "status": "complete"
+  },
+  "experiment_b": {
+    "id": 2,
+    "name": "full_pipeline",
+    "config": {
+      "use_hyde": true,
+      "use_expansion": true,
+      "use_reranking": true
+    },
+    "status": "complete"
+  },
+  "benchmark_version": "devmind-50-v1",
+  "corpus_fingerprint": "99fa4c41b466e996b05fa9fabb36b55e",
+  "metrics": {
+    "retrieval_recall": {
+      "paired_count": 50,
+      "excluded_pairs": 0,
+      "mean_a": 0.96,
+      "std_a": 0.13702375780893483,
+      "mean_b": 0.96,
+      "std_b": 0.17023393268304265,
+      "difference_b_minus_a": 0.0,
+      "improvement_percent": 0.0,
+      "p_value": 1.0,
+      "significant": false,
+      "b_is_better": false,
+      "note": null,
+      "p_value_holm": 1.0,
+      "significant_holm": false
+    },
+    "faithfulness_score": {
+      "paired_count": 50,
+      "excluded_pairs": 0,
+      "mean_a": 0.9792857142857143,
+      "std_a": 0.06218818277842354,
+      "mean_b": 1.0,
+      "std_b": 0.0,
+      "difference_b_minus_a": 0.020714285714285685,
+      "improvement_percent": 2.115244347191828,
+      "p_value": 0.022555441140850844,
+      "significant": true,
+      "b_is_better": true,
+      "note": null,
+      "p_value_holm": 0.06766632342255254,
+      "significant_holm": false
+    },
+    "answer_relevance": {
+      "paired_count": 50,
+      "excluded_pairs": 0,
+      "mean_a": 0.9,
+      "std_a": 0.19342948582466574,
+      "mean_b": 0.9,
+      "std_b": 0.20481726826291968,
+      "difference_b_minus_a": 0.0,
+      "improvement_percent": 0.0,
+      "p_value": 1.0,
+      "significant": false,
+      "b_is_better": false,
+      "note": null,
+      "p_value_holm": 1.0,
+      "significant_holm": false
+    },
+    "latency_ms": {
+      "paired_count": 50,
+      "excluded_pairs": 0,
+      "mean_a": 2401.1306,
+      "std_a": 926.3714859147809,
+      "mean_b": 5079.939,
+      "std_b": 808.8483774068372,
+      "difference_b_minus_a": 2678.8084000000003,
+      "improvement_percent": -111.56446050872869,
+      "p_value": 1.8982168895868317e-23,
+      "significant": true,
+      "b_is_better": false,
+      "note": null,
+      "p_value_holm": 7.592867558347327e-23,
+      "significant_holm": true
+    }
+  },
+  "notes": [
+    "Retrieval recall is annotated chunk recall@5 against incomplete supporting-source labels.",
+    "Answer relevance is keyword coverage, not an LLM or semantic relevance score.",
+    "Latency excludes faithfulness judging and one-time model loading; lower is better.",
+    "Means and sample standard deviations use the same non-missing pairs per metric.",
+    "P-values are two-sided paired t-tests; Holm-adjusted values account for four metrics.",
+    "This corpus-grounded development benchmark is exploratory, not a held-out evaluation."
+  ],
+  "run_details": {
+    "base_commit": "b91e1ffeb9fa35c50b8d6e1a301d958512f3a794",
+    "app_source_sha256": "137234808ffd08ac7038fd64b51e2d44c2965d8684061a8f7e7c78e5d4bad433",
+    "python": "3.14.5",
+    "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
+    "dependencies": {
+      "scipy": "1.18.0",
+      "numpy": "2.5.0",
+      "openai": "2.44.0",
+      "sentence-transformers": "5.6.0",
+      "SQLAlchemy": "2.0.51"
+    },
+    "models": {
+      "generation_and_judge": "gpt-4o-mini",
+      "embedding": "text-embedding-3-small",
+      "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    },
+    "order": "Baseline first, full pipeline second; one API worker, no concurrent experiment execution.",
+    "experiments": [
+      {
+        "experiment_id": 1,
+        "created_at": "2026-09-08T20:08:03.262967+00:00",
+        "completed_at": "2026-09-08T20:12:45.978941+00:00",
+        "progress": {
+          "completed": 50,
+          "total": 50,
+          "failed": 0
+        }
+      },
+      {
+        "experiment_id": 2,
+        "created_at": "2026-09-08T20:08:03.426321+00:00",
+        "completed_at": "2026-09-08T20:19:28.608162+00:00",
+        "progress": {
+          "completed": 50,
+          "total": 50,
+          "failed": 0
+        }
+      }
+    ]
+  },
+  "per_query_results": {
+    "1": [
+      {
+        "id": 1,
+        "experiment_id": 1,
+        "query_log_id": 7,
+        "benchmark_id": "q01",
+        "query": "What is retrieval augmented generation?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 0.5,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 7606.19,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            21,
+            32
+          ],
+          "retrieved_document_ids": [
+            36,
+            83,
+            9,
+            21,
+            50
+          ]
+        },
+        "created_at": "2026-09-08T20:08:15.897898+00:00"
+      },
+      {
+        "id": 2,
+        "experiment_id": 1,
+        "query_log_id": 8,
+        "benchmark_id": "q02",
+        "query": "What does Ragas evaluate in a RAG system?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 2569.38,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            9
+          ],
+          "retrieved_document_ids": [
+            9,
+            32,
+            11,
+            86,
+            907
+          ]
+        },
+        "created_at": "2026-09-08T20:08:24.093586+00:00"
+      },
+      {
+        "id": 3,
+        "experiment_id": 1,
+        "query_log_id": 9,
+        "benchmark_id": "q03",
+        "query": "What are the main challenges of using RAG in industry?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 0.8571428571428571,
+        "answer_relevance": 1.0,
+        "latency_ms": 4265.59,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            32
+          ],
+          "retrieved_document_ids": [
+            32,
+            11,
+            265,
+            907,
+            247
+          ]
+        },
+        "created_at": "2026-09-08T20:08:31.790883+00:00"
+      },
+      {
+        "id": 4,
+        "experiment_id": 1,
+        "query_log_id": 10,
+        "benchmark_id": "q04",
+        "query": "How does the Music Transformer reduce the memory cost of relative attention?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2141.88,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            147
+          ],
+          "retrieved_document_ids": [
+            147,
+            127,
+            138,
+            111,
+            139
+          ]
+        },
+        "created_at": "2026-09-08T20:08:36.133653+00:00"
+      },
+      {
+        "id": 5,
+        "experiment_id": 1,
+        "query_log_id": 11,
+        "benchmark_id": "q05",
+        "query": "Which hardware-aware techniques does DeepSeek-V3 use to improve efficiency?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 0.875,
+        "answer_relevance": 1.0,
+        "latency_ms": 2275.14,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            108
+          ],
+          "retrieved_document_ids": [
+            108,
+            792,
+            113,
+            140,
+            62
+          ]
+        },
+        "created_at": "2026-09-08T20:08:42.386694+00:00"
+      },
+      {
+        "id": 6,
+        "experiment_id": 1,
+        "query_log_id": 12,
+        "benchmark_id": "q06",
+        "query": "Why are neural ranking models useful for document retrieval?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 3179.16,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            43
+          ],
+          "retrieved_document_ids": [
+            43,
+            16,
+            278,
+            293,
+            38
+          ]
+        },
+        "created_at": "2026-09-08T20:08:49.525653+00:00"
+      },
+      {
+        "id": 7,
+        "experiment_id": 1,
+        "query_log_id": 13,
+        "benchmark_id": "q07",
+        "query": "Why can adding more retrieved chunks make a RAG answer worse?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.3333333333333333,
+        "latency_ms": 2443.5,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            19
+          ],
+          "retrieved_document_ids": [
+            19,
+            18,
+            21,
+            586,
+            1
+          ]
+        },
+        "created_at": "2026-09-08T20:08:55.249404+00:00"
+      },
+      {
+        "id": 8,
+        "experiment_id": 1,
+        "query_log_id": 14,
+        "benchmark_id": "q08",
+        "query": "How can metadata help distinguish similar document chunks during retrieval?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.3333333333333333,
+        "latency_ms": 3429.2,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            13
+          ],
+          "retrieved_document_ids": [
+            13,
+            293,
+            582,
+            18,
+            19
+          ]
+        },
+        "created_at": "2026-09-08T20:09:02.610689+00:00"
+      },
+      {
+        "id": 9,
+        "experiment_id": 1,
+        "query_log_id": 15,
+        "benchmark_id": "q09",
+        "query": "What tradeoff separates late chunking from contextual retrieval?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1653.83,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            18
+          ],
+          "retrieved_document_ids": [
+            18,
+            13,
+            19,
+            292,
+            289
+          ]
+        },
+        "created_at": "2026-09-08T20:09:06.766921+00:00"
+      },
+      {
+        "id": 10,
+        "experiment_id": 1,
+        "query_log_id": 16,
+        "benchmark_id": "q10",
+        "query": "How can an iterative RAG system identify and fill missing evidence?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1744.93,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            12
+          ],
+          "retrieved_document_ids": [
+            12,
+            36,
+            32,
+            9,
+            472
+          ]
+        },
+        "created_at": "2026-09-08T20:09:11.958982+00:00"
+      },
+      {
+        "id": 11,
+        "experiment_id": 1,
+        "query_log_id": 17,
+        "benchmark_id": "q11",
+        "query": "How can retrieval information reduce the mismatch between a retriever and a language model?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 0.8571428571428571,
+        "answer_relevance": 1.0,
+        "latency_ms": 2680.59,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            36
+          ],
+          "retrieved_document_ids": [
+            36,
+            288,
+            15,
+            47,
+            21
+          ]
+        },
+        "created_at": "2026-09-08T20:09:18.327725+00:00"
+      },
+      {
+        "id": 12,
+        "experiment_id": 1,
+        "query_log_id": 18,
+        "benchmark_id": "q12",
+        "query": "Why might pruning attention layers reduce vision transformer costs more than pruning tokens?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1984.61,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            127
+          ],
+          "retrieved_document_ids": [
+            127,
+            66,
+            138,
+            121,
+            137
+          ]
+        },
+        "created_at": "2026-09-08T20:09:23.772120+00:00"
+      },
+      {
+        "id": 13,
+        "experiment_id": 1,
+        "query_log_id": 19,
+        "benchmark_id": "q13",
+        "query": "How can RAG defend against malicious documents without changing the generation model?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2772.21,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            15
+          ],
+          "retrieved_document_ids": [
+            15,
+            8,
+            36,
+            30,
+            21
+          ]
+        },
+        "created_at": "2026-09-08T20:09:29.438137+00:00"
+      },
+      {
+        "id": 14,
+        "experiment_id": 1,
+        "query_log_id": 20,
+        "benchmark_id": "q14",
+        "query": "How can evolving both queries and knowledge sources improve retrieval-augmented code generation?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2885.15,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            7
+          ],
+          "retrieved_document_ids": [
+            7,
+            18,
+            27,
+            83,
+            21
+          ]
+        },
+        "created_at": "2026-09-08T20:09:35.711457+00:00"
+      },
+      {
+        "id": 15,
+        "experiment_id": 1,
+        "query_log_id": 21,
+        "benchmark_id": "q15",
+        "query": "How can tree-based retrieval reduce cascading errors in multi-hop reasoning?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1789.62,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            24
+          ],
+          "retrieved_document_ids": [
+            24,
+            12,
+            56,
+            19,
+            91
+          ]
+        },
+        "created_at": "2026-09-08T20:09:44.888398+00:00"
+      },
+      {
+        "id": 16,
+        "experiment_id": 1,
+        "query_log_id": 22,
+        "benchmark_id": "q16",
+        "query": "What are the latency and retrieval-quality tradeoffs of a small reranker for code API search?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2438.12,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            27
+          ],
+          "retrieved_document_ids": [
+            27,
+            289,
+            614,
+            47,
+            282
+          ]
+        },
+        "created_at": "2026-09-08T20:09:51.465852+00:00"
+      },
+      {
+        "id": 17,
+        "experiment_id": 1,
+        "query_log_id": 23,
+        "benchmark_id": "q17",
+        "query": "What does yield do in Python?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 2372.23,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            492
+          ],
+          "retrieved_document_ids": [
+            492,
+            494,
+            533,
+            502,
+            515
+          ]
+        },
+        "created_at": "2026-09-08T20:09:57.330604+00:00"
+      },
+      {
+        "id": 18,
+        "experiment_id": 1,
+        "query_log_id": 24,
+        "benchmark_id": "q18",
+        "query": "How is a class method different from a static method in Python?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2513.13,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            501
+          ],
+          "retrieved_document_ids": [
+            501,
+            495,
+            512,
+            72,
+            493
+          ]
+        },
+        "created_at": "2026-09-08T20:10:03.780769+00:00"
+      },
+      {
+        "id": 19,
+        "experiment_id": 1,
+        "query_log_id": 25,
+        "benchmark_id": "q19",
+        "query": "What does model.eval() change in PyTorch?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1883.39,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            526
+          ],
+          "retrieved_document_ids": [
+            526,
+            533,
+            523,
+            556,
+            553
+          ]
+        },
+        "created_at": "2026-09-08T20:10:08.409651+00:00"
+      },
+      {
+        "id": 20,
+        "experiment_id": 1,
+        "query_log_id": 26,
+        "benchmark_id": "q20",
+        "query": "How can I check whether PyTorch can use my GPU?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2592.95,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            552
+          ],
+          "retrieved_document_ids": [
+            552,
+            568,
+            561,
+            816,
+            814
+          ]
+        },
+        "created_at": "2026-09-08T20:10:14.675932+00:00"
+      },
+      {
+        "id": 21,
+        "experiment_id": 1,
+        "query_log_id": 27,
+        "benchmark_id": "q21",
+        "query": "How do I save and reload a trained PyTorch model's parameters?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2374.88,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            553
+          ],
+          "retrieved_document_ids": [
+            553,
+            557,
+            526,
+            561,
+            532
+          ]
+        },
+        "created_at": "2026-09-08T20:10:19.837167+00:00"
+      },
+      {
+        "id": 22,
+        "experiment_id": 1,
+        "query_log_id": 28,
+        "benchmark_id": "q22",
+        "query": "Why should I call zero_grad before backpropagation in PyTorch?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2232.09,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            554
+          ],
+          "retrieved_document_ids": [
+            554,
+            558,
+            567,
+            533,
+            526
+          ]
+        },
+        "created_at": "2026-09-08T20:10:24.970915+00:00"
+      },
+      {
+        "id": 23,
+        "experiment_id": 1,
+        "query_log_id": 29,
+        "benchmark_id": "q23",
+        "query": "Why does a neural network need bias terms as well as weights?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2101.65,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            516
+          ],
+          "retrieved_document_ids": [
+            516,
+            528,
+            259,
+            305,
+            441
+          ]
+        },
+        "created_at": "2026-09-08T20:10:31.197242+00:00"
+      },
+      {
+        "id": 24,
+        "experiment_id": 1,
+        "query_log_id": 30,
+        "benchmark_id": "q24",
+        "query": "How do logits differ from the probabilities returned by softmax?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2544.71,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            519
+          ],
+          "retrieved_document_ids": [
+            519,
+            525,
+            529,
+            528,
+            71
+          ]
+        },
+        "created_at": "2026-09-08T20:10:37.092662+00:00"
+      },
+      {
+        "id": 25,
+        "experiment_id": 1,
+        "query_log_id": 31,
+        "benchmark_id": "q25",
+        "query": "How does lemmatization differ from stemming?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1993.4,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            538
+          ],
+          "retrieved_document_ids": [
+            538,
+            546,
+            978,
+            542,
+            288
+          ]
+        },
+        "created_at": "2026-09-08T20:10:43.795780+00:00"
+      },
+      {
+        "id": 26,
+        "experiment_id": 1,
+        "query_log_id": 32,
+        "benchmark_id": "q26",
+        "query": "When does reshape copy tensor data while view shares storage?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2061.94,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            555
+          ],
+          "retrieved_document_ids": [
+            555,
+            524,
+            560,
+            566,
+            556
+          ]
+        },
+        "created_at": "2026-09-08T20:10:49.119987+00:00"
+      },
+      {
+        "id": 27,
+        "experiment_id": 1,
+        "query_log_id": 33,
+        "benchmark_id": "q27",
+        "query": "Why can transposing a PyTorch tensor make contiguous() necessary?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 1919.11,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            556
+          ],
+          "retrieved_document_ids": [
+            556,
+            555,
+            562,
+            560,
+            127
+          ]
+        },
+        "created_at": "2026-09-08T20:10:53.443055+00:00"
+      },
+      {
+        "id": 28,
+        "experiment_id": 1,
+        "query_log_id": 34,
+        "benchmark_id": "q28",
+        "query": "What do loss.backward() and optimizer.step() each do?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2688.63,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            558
+          ],
+          "retrieved_document_ids": [
+            558,
+            554,
+            530,
+            567,
+            562
+          ]
+        },
+        "created_at": "2026-09-08T20:10:59.995182+00:00"
+      },
+      {
+        "id": 29,
+        "experiment_id": 1,
+        "query_log_id": 35,
+        "benchmark_id": "q29",
+        "query": "Why can CUDA out-of-memory errors remain after calling empty_cache, and what can I try next?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2478.52,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            561
+          ],
+          "retrieved_document_ids": [
+            561,
+            568,
+            145,
+            102,
+            558
+          ]
+        },
+        "created_at": "2026-09-08T20:11:05.144066+00:00"
+      },
+      {
+        "id": 30,
+        "experiment_id": 1,
+        "query_log_id": 36,
+        "benchmark_id": "q30",
+        "query": "Why is packing variable-length sequences more efficient than padding them for an RNN?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2295.44,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            562
+          ],
+          "retrieved_document_ids": [
+            562,
+            353,
+            548,
+            85,
+            438
+          ]
+        },
+        "created_at": "2026-09-08T20:11:10.857643+00:00"
+      },
+      {
+        "id": 31,
+        "experiment_id": 1,
+        "query_log_id": 37,
+        "benchmark_id": "q31",
+        "query": "Why can torch.cuda.is_available return false even when CUDA is installed?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 2545.07,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            568
+          ],
+          "retrieved_document_ids": [
+            568,
+            552,
+            814,
+            559,
+            819
+          ]
+        },
+        "created_at": "2026-09-08T20:11:17.122027+00:00"
+      },
+      {
+        "id": 32,
+        "experiment_id": 1,
+        "query_log_id": 38,
+        "benchmark_id": "q32",
+        "query": "Why might PostgreSQL report that type vector does not exist even after installing pgvector?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1882.12,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            584
+          ],
+          "retrieved_document_ids": [
+            584,
+            731,
+            704,
+            738,
+            715
+          ]
+        },
+        "created_at": "2026-09-08T20:11:21.366836+00:00"
+      },
+      {
+        "id": 33,
+        "experiment_id": 1,
+        "query_log_id": 39,
+        "benchmark_id": "q33",
+        "query": "How do I compile and install pgvector on Linux or macOS?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 2626.81,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            656
+          ],
+          "retrieved_document_ids": [
+            656,
+            657,
+            849,
+            731,
+            983
+          ]
+        },
+        "created_at": "2026-09-08T20:11:26.772233+00:00"
+      },
+      {
+        "id": 34,
+        "experiment_id": 1,
+        "query_log_id": 40,
+        "benchmark_id": "q34",
+        "query": "How do I enable pgvector and create a column for three-dimensional vectors?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1715.63,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            658
+          ],
+          "retrieved_document_ids": [
+            658,
+            659,
+            699,
+            513,
+            731
+          ]
+        },
+        "created_at": "2026-09-08T20:11:30.913916+00:00"
+      },
+      {
+        "id": 35,
+        "experiment_id": 1,
+        "query_log_id": 41,
+        "benchmark_id": "q35",
+        "query": "How do I find the nearest vectors in pgvector using a SQL query?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 3510.64,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            660
+          ],
+          "retrieved_document_ids": [
+            660,
+            658,
+            655,
+            663,
+            703
+          ]
+        },
+        "created_at": "2026-09-08T20:11:39.308433+00:00"
+      },
+      {
+        "id": 36,
+        "experiment_id": 1,
+        "query_log_id": 42,
+        "benchmark_id": "q36",
+        "query": "How do I make asynchronous API calls with the OpenAI Python client?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2106.72,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            752
+          ],
+          "retrieved_document_ids": [
+            752,
+            778,
+            743,
+            745,
+            753
+          ]
+        },
+        "created_at": "2026-09-08T20:11:43.427048+00:00"
+      },
+      {
+        "id": 37,
+        "experiment_id": 1,
+        "query_log_id": 43,
+        "benchmark_id": "q37",
+        "query": "How do I stream responses with the OpenAI Python client?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2598.2,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            754
+          ],
+          "retrieved_document_ids": [
+            754,
+            745,
+            771,
+            778,
+            770
+          ]
+        },
+        "created_at": "2026-09-08T20:11:48.453789+00:00"
+      },
+      {
+        "id": 38,
+        "experiment_id": 1,
+        "query_log_id": 44,
+        "benchmark_id": "q38",
+        "query": "How do I select the Keras backend before importing Keras?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 0.875,
+        "answer_relevance": 1.0,
+        "latency_ms": 2468.93,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            838
+          ],
+          "retrieved_document_ids": [
+            838,
+            834,
+            839,
+            836,
+            837
+          ]
+        },
+        "created_at": "2026-09-08T20:11:53.988461+00:00"
+      },
+      {
+        "id": 39,
+        "experiment_id": 1,
+        "query_log_id": 45,
+        "benchmark_id": "q39",
+        "query": "What changes when I add an approximate index to pgvector's exact search?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1562.8,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            663
+          ],
+          "retrieved_document_ids": [
+            663,
+            690,
+            691,
+            614,
+            694
+          ]
+        },
+        "created_at": "2026-09-08T20:11:58.166122+00:00"
+      },
+      {
+        "id": 40,
+        "experiment_id": 1,
+        "query_log_id": 46,
+        "benchmark_id": "q40",
+        "query": "How do I create an HNSW index for cosine distance in pgvector?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1444.51,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            664
+          ],
+          "retrieved_document_ids": [
+            664,
+            704,
+            684,
+            669,
+            655
+          ]
+        },
+        "created_at": "2026-09-08T20:12:01.145794+00:00"
+      },
+      {
+        "id": 41,
+        "experiment_id": 1,
+        "query_log_id": 47,
+        "benchmark_id": "q41",
+        "query": "How should I choose lists and probes when creating an IVFFlat vector index?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1907.97,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            669
+          ],
+          "retrieved_document_ids": [
+            669,
+            705,
+            670,
+            691,
+            677
+          ]
+        },
+        "created_at": "2026-09-08T20:12:05.459444+00:00"
+      },
+      {
+        "id": 42,
+        "experiment_id": 1,
+        "query_log_id": 48,
+        "benchmark_id": "q42",
+        "query": "Why can filtering a pgvector approximate query return fewer results than requested?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.3333333333333333,
+        "latency_ms": 2058.41,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            673,
+            674
+          ],
+          "retrieved_document_ids": [
+            704,
+            705,
+            673,
+            674,
+            663
+          ]
+        },
+        "created_at": "2026-09-08T20:12:09.754558+00:00"
+      },
+      {
+        "id": 43,
+        "experiment_id": 1,
+        "query_log_id": 49,
+        "benchmark_id": "q43",
+        "query": "Which OpenAI Python client errors are retried and how do I configure retries?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2404.55,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            766
+          ],
+          "retrieved_document_ids": [
+            766,
+            767,
+            764,
+            779,
+            756
+          ]
+        },
+        "created_at": "2026-09-08T20:12:15.655923+00:00"
+      },
+      {
+        "id": 44,
+        "experiment_id": 1,
+        "query_log_id": 50,
+        "benchmark_id": "q44",
+        "query": "How do I set a per-request timeout in the OpenAI Python client?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 2141.51,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            767
+          ],
+          "retrieved_document_ids": [
+            767,
+            766,
+            776,
+            967,
+            745
+          ]
+        },
+        "created_at": "2026-09-08T20:12:19.622446+00:00"
+      },
+      {
+        "id": 45,
+        "experiment_id": 1,
+        "query_log_id": 51,
+        "benchmark_id": "q45",
+        "query": "What is the build-time and memory tradeoff between HNSW and IVFFlat in pgvector?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1424.78,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            664,
+            669
+          ],
+          "retrieved_document_ids": [
+            669,
+            664,
+            688,
+            691,
+            292
+          ]
+        },
+        "created_at": "2026-09-08T20:12:23.090103+00:00"
+      },
+      {
+        "id": 46,
+        "experiment_id": 1,
+        "query_log_id": 52,
+        "benchmark_id": "q46",
+        "query": "How can I index embeddings with more than 2000 dimensions in pgvector?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1695.38,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            698
+          ],
+          "retrieved_document_ids": [
+            698,
+            699,
+            700,
+            664,
+            682
+          ]
+        },
+        "created_at": "2026-09-08T20:12:26.680589+00:00"
+      },
+      {
+        "id": 47,
+        "experiment_id": 1,
+        "query_log_id": 53,
+        "benchmark_id": "q47",
+        "query": "How does tape-based autograd let PyTorch support dynamic neural networks?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 1545.28,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            806
+          ],
+          "retrieved_document_ids": [
+            806,
+            803,
+            804,
+            567,
+            828
+          ]
+        },
+        "created_at": "2026-09-08T20:12:30.154988+00:00"
+      },
+      {
+        "id": 48,
+        "experiment_id": 1,
+        "query_log_id": 54,
+        "benchmark_id": "q48",
+        "query": "How can dense and keyword search be combined for a technical documentation retriever?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 0.5,
+        "faithfulness_score": 0.8333333333333334,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 2100.23,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            683,
+            21
+          ],
+          "retrieved_document_ids": [
+            38,
+            644,
+            646,
+            21,
+            549
+          ]
+        },
+        "created_at": "2026-09-08T20:12:34.929491+00:00"
+      },
+      {
+        "id": 49,
+        "experiment_id": 1,
+        "query_log_id": 55,
+        "benchmark_id": "q49",
+        "query": "How can a RAG application ingest heterogeneous data and structure it for retrieval?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 0.5,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 2008.54,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            955,
+            7
+          ],
+          "retrieved_document_ids": [
+            30,
+            955,
+            11,
+            580,
+            32
+          ]
+        },
+        "created_at": "2026-09-08T20:12:40.489505+00:00"
+      },
+      {
+        "id": 50,
+        "experiment_id": 1,
+        "query_log_id": 56,
+        "benchmark_id": "q50",
+        "query": "How do inference serving techniques and hardware-aware model design address attention memory costs?",
+        "config": {
+          "use_hyde": false,
+          "use_expansion": false,
+          "use_reranking": false
+        },
+        "retrieval_recall": 0.5,
+        "faithfulness_score": 0.6666666666666666,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 2397.28,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            916,
+            108
+          ],
+          "retrieved_document_ids": [
+            108,
+            120,
+            113,
+            17,
+            485
+          ]
+        },
+        "created_at": "2026-09-08T20:12:45.879361+00:00"
+      }
+    ],
+    "2": [
+      {
+        "id": 51,
+        "experiment_id": 2,
+        "query_log_id": 57,
+        "benchmark_id": "q01",
+        "query": "What is retrieval augmented generation?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 6162.19,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            21,
+            32
+          ],
+          "retrieved_document_ids": [
+            21,
+            32,
+            18,
+            36,
+            15
+          ]
+        },
+        "created_at": "2026-09-08T20:12:58.366884+00:00"
+      },
+      {
+        "id": 52,
+        "experiment_id": 2,
+        "query_log_id": 58,
+        "benchmark_id": "q02",
+        "query": "What does Ragas evaluate in a RAG system?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 4577.01,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            9
+          ],
+          "retrieved_document_ids": [
+            9,
+            32,
+            11,
+            21,
+            50
+          ]
+        },
+        "created_at": "2026-09-08T20:13:05.953610+00:00"
+      },
+      {
+        "id": 53,
+        "experiment_id": 2,
+        "query_log_id": 59,
+        "benchmark_id": "q03",
+        "query": "What are the main challenges of using RAG in industry?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5652.05,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            32
+          ],
+          "retrieved_document_ids": [
+            32,
+            19,
+            21,
+            9,
+            86
+          ]
+        },
+        "created_at": "2026-09-08T20:13:13.967801+00:00"
+      },
+      {
+        "id": 54,
+        "experiment_id": 2,
+        "query_log_id": 60,
+        "benchmark_id": "q04",
+        "query": "How does the Music Transformer reduce the memory cost of relative attention?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4240.3,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            147
+          ],
+          "retrieved_document_ids": [
+            147,
+            138,
+            127,
+            111,
+            80
+          ]
+        },
+        "created_at": "2026-09-08T20:13:20.432336+00:00"
+      },
+      {
+        "id": 55,
+        "experiment_id": 2,
+        "query_log_id": 61,
+        "benchmark_id": "q05",
+        "query": "Which hardware-aware techniques does DeepSeek-V3 use to improve efficiency?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4269.81,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            108
+          ],
+          "retrieved_document_ids": [
+            108,
+            435,
+            62,
+            102,
+            123
+          ]
+        },
+        "created_at": "2026-09-08T20:13:27.318150+00:00"
+      },
+      {
+        "id": 56,
+        "experiment_id": 2,
+        "query_log_id": 62,
+        "benchmark_id": "q06",
+        "query": "Why are neural ranking models useful for document retrieval?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4788.35,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            43
+          ],
+          "retrieved_document_ids": [
+            43,
+            16,
+            278,
+            252,
+            293
+          ]
+        },
+        "created_at": "2026-09-08T20:13:35.272707+00:00"
+      },
+      {
+        "id": 57,
+        "experiment_id": 2,
+        "query_log_id": 63,
+        "benchmark_id": "q07",
+        "query": "Why can adding more retrieved chunks make a RAG answer worse?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 4931.55,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            19
+          ],
+          "retrieved_document_ids": [
+            19,
+            18,
+            47,
+            21,
+            8
+          ]
+        },
+        "created_at": "2026-09-08T20:13:42.865387+00:00"
+      },
+      {
+        "id": 58,
+        "experiment_id": 2,
+        "query_log_id": 64,
+        "benchmark_id": "q08",
+        "query": "How can metadata help distinguish similar document chunks during retrieval?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.3333333333333333,
+        "latency_ms": 4483.14,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            13
+          ],
+          "retrieved_document_ids": [
+            13,
+            283,
+            18,
+            293,
+            288
+          ]
+        },
+        "created_at": "2026-09-08T20:13:50.551652+00:00"
+      },
+      {
+        "id": 59,
+        "experiment_id": 2,
+        "query_log_id": 65,
+        "benchmark_id": "q09",
+        "query": "What tradeoff separates late chunking from contextual retrieval?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 4287.5,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            18
+          ],
+          "retrieved_document_ids": [
+            18,
+            13,
+            19,
+            29,
+            289
+          ]
+        },
+        "created_at": "2026-09-08T20:13:56.932220+00:00"
+      },
+      {
+        "id": 60,
+        "experiment_id": 2,
+        "query_log_id": 66,
+        "benchmark_id": "q10",
+        "query": "How can an iterative RAG system identify and fill missing evidence?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4522.21,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            12
+          ],
+          "retrieved_document_ids": [
+            12,
+            9,
+            8,
+            19,
+            21
+          ]
+        },
+        "created_at": "2026-09-08T20:14:05.275640+00:00"
+      },
+      {
+        "id": 61,
+        "experiment_id": 2,
+        "query_log_id": 67,
+        "benchmark_id": "q11",
+        "query": "How can retrieval information reduce the mismatch between a retriever and a language model?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4668.67,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            36
+          ],
+          "retrieved_document_ids": [
+            36,
+            15,
+            47,
+            288,
+            21
+          ]
+        },
+        "created_at": "2026-09-08T20:14:12.894587+00:00"
+      },
+      {
+        "id": 62,
+        "experiment_id": 2,
+        "query_log_id": 68,
+        "benchmark_id": "q12",
+        "query": "Why might pruning attention layers reduce vision transformer costs more than pruning tokens?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5907.36,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            127
+          ],
+          "retrieved_document_ids": [
+            127,
+            66,
+            138,
+            137,
+            62
+          ]
+        },
+        "created_at": "2026-09-08T20:14:21.847784+00:00"
+      },
+      {
+        "id": 63,
+        "experiment_id": 2,
+        "query_log_id": 69,
+        "benchmark_id": "q13",
+        "query": "How can RAG defend against malicious documents without changing the generation model?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4633.25,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            15
+          ],
+          "retrieved_document_ids": [
+            15,
+            8,
+            36,
+            21,
+            18
+          ]
+        },
+        "created_at": "2026-09-08T20:14:29.085313+00:00"
+      },
+      {
+        "id": 64,
+        "experiment_id": 2,
+        "query_log_id": 70,
+        "benchmark_id": "q14",
+        "query": "How can evolving both queries and knowledge sources improve retrieval-augmented code generation?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4449.27,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            7
+          ],
+          "retrieved_document_ids": [
+            7,
+            18,
+            32,
+            19,
+            12
+          ]
+        },
+        "created_at": "2026-09-08T20:14:36.603259+00:00"
+      },
+      {
+        "id": 65,
+        "experiment_id": 2,
+        "query_log_id": 71,
+        "benchmark_id": "q15",
+        "query": "How can tree-based retrieval reduce cascading errors in multi-hop reasoning?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5453.53,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            24
+          ],
+          "retrieved_document_ids": [
+            24,
+            12,
+            19,
+            35,
+            17
+          ]
+        },
+        "created_at": "2026-09-08T20:14:45.566777+00:00"
+      },
+      {
+        "id": 66,
+        "experiment_id": 2,
+        "query_log_id": 72,
+        "benchmark_id": "q16",
+        "query": "What are the latency and retrieval-quality tradeoffs of a small reranker for code API search?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5139.08,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            27
+          ],
+          "retrieved_document_ids": [
+            27,
+            18,
+            20,
+            282,
+            290
+          ]
+        },
+        "created_at": "2026-09-08T20:14:53.709894+00:00"
+      },
+      {
+        "id": 67,
+        "experiment_id": 2,
+        "query_log_id": 73,
+        "benchmark_id": "q17",
+        "query": "What does yield do in Python?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4712.71,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            492
+          ],
+          "retrieved_document_ids": [
+            492,
+            495,
+            502,
+            494,
+            493
+          ]
+        },
+        "created_at": "2026-09-08T20:15:01.621967+00:00"
+      },
+      {
+        "id": 68,
+        "experiment_id": 2,
+        "query_log_id": 74,
+        "benchmark_id": "q18",
+        "query": "How is a class method different from a static method in Python?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5177.88,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            501
+          ],
+          "retrieved_document_ids": [
+            501,
+            495,
+            512,
+            72,
+            770
+          ]
+        },
+        "created_at": "2026-09-08T20:15:10.193571+00:00"
+      },
+      {
+        "id": 69,
+        "experiment_id": 2,
+        "query_log_id": 75,
+        "benchmark_id": "q19",
+        "query": "What does model.eval() change in PyTorch?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5239.62,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            526
+          ],
+          "retrieved_document_ids": [
+            526,
+            533,
+            556,
+            553,
+            806
+          ]
+        },
+        "created_at": "2026-09-08T20:15:19.222221+00:00"
+      },
+      {
+        "id": 70,
+        "experiment_id": 2,
+        "query_log_id": 76,
+        "benchmark_id": "q20",
+        "query": "How can I check whether PyTorch can use my GPU?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5545.4,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            552
+          ],
+          "retrieved_document_ids": [
+            552,
+            805,
+            816,
+            568,
+            561
+          ]
+        },
+        "created_at": "2026-09-08T20:15:28.237000+00:00"
+      },
+      {
+        "id": 71,
+        "experiment_id": 2,
+        "query_log_id": 77,
+        "benchmark_id": "q21",
+        "query": "How do I save and reload a trained PyTorch model's parameters?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 8117.93,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            553
+          ],
+          "retrieved_document_ids": [
+            553,
+            554,
+            557,
+            523,
+            528
+          ]
+        },
+        "created_at": "2026-09-08T20:15:39.891606+00:00"
+      },
+      {
+        "id": 72,
+        "experiment_id": 2,
+        "query_log_id": 78,
+        "benchmark_id": "q22",
+        "query": "Why should I call zero_grad before backpropagation in PyTorch?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5047.15,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            554
+          ],
+          "retrieved_document_ids": [
+            554,
+            558,
+            567,
+            526,
+            562
+          ]
+        },
+        "created_at": "2026-09-08T20:15:47.461636+00:00"
+      },
+      {
+        "id": 73,
+        "experiment_id": 2,
+        "query_log_id": 79,
+        "benchmark_id": "q23",
+        "query": "Why does a neural network need bias terms as well as weights?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4238.18,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            516
+          ],
+          "retrieved_document_ids": [
+            516,
+            528,
+            521,
+            259,
+            422
+          ]
+        },
+        "created_at": "2026-09-08T20:15:55.148683+00:00"
+      },
+      {
+        "id": 74,
+        "experiment_id": 2,
+        "query_log_id": 80,
+        "benchmark_id": "q24",
+        "query": "How do logits differ from the probabilities returned by softmax?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 6926.07,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            519
+          ],
+          "retrieved_document_ids": [
+            519,
+            525,
+            529,
+            534,
+            530
+          ]
+        },
+        "created_at": "2026-09-08T20:16:05.512654+00:00"
+      },
+      {
+        "id": 75,
+        "experiment_id": 2,
+        "query_log_id": 81,
+        "benchmark_id": "q25",
+        "query": "How does lemmatization differ from stemming?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5505.67,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            538
+          ],
+          "retrieved_document_ids": [
+            538,
+            580,
+            976,
+            546,
+            548
+          ]
+        },
+        "created_at": "2026-09-08T20:16:14.097254+00:00"
+      },
+      {
+        "id": 76,
+        "experiment_id": 2,
+        "query_log_id": 82,
+        "benchmark_id": "q26",
+        "query": "When does reshape copy tensor data while view shares storage?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5682.57,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            555
+          ],
+          "retrieved_document_ids": [
+            555,
+            524,
+            556,
+            560,
+            564
+          ]
+        },
+        "created_at": "2026-09-08T20:16:23.556546+00:00"
+      },
+      {
+        "id": 77,
+        "experiment_id": 2,
+        "query_log_id": 83,
+        "benchmark_id": "q27",
+        "query": "Why can transposing a PyTorch tensor make contiguous() necessary?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.3333333333333333,
+        "latency_ms": 5523.24,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            556
+          ],
+          "retrieved_document_ids": [
+            556,
+            555,
+            562,
+            524,
+            805
+          ]
+        },
+        "created_at": "2026-09-08T20:16:31.925727+00:00"
+      },
+      {
+        "id": 78,
+        "experiment_id": 2,
+        "query_log_id": 84,
+        "benchmark_id": "q28",
+        "query": "What do loss.backward() and optimizer.step() each do?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4908.07,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            558
+          ],
+          "retrieved_document_ids": [
+            558,
+            554,
+            530,
+            244,
+            526
+          ]
+        },
+        "created_at": "2026-09-08T20:16:40.317997+00:00"
+      },
+      {
+        "id": 79,
+        "experiment_id": 2,
+        "query_log_id": 85,
+        "benchmark_id": "q29",
+        "query": "Why can CUDA out-of-memory errors remain after calling empty_cache, and what can I try next?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5676.64,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            561
+          ],
+          "retrieved_document_ids": [
+            561,
+            568,
+            552,
+            145,
+            102
+          ]
+        },
+        "created_at": "2026-09-08T20:16:49.221226+00:00"
+      },
+      {
+        "id": 80,
+        "experiment_id": 2,
+        "query_log_id": 86,
+        "benchmark_id": "q30",
+        "query": "Why is packing variable-length sequences more efficient than padding them for an RNN?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5353.54,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            562
+          ],
+          "retrieved_document_ids": [
+            562,
+            313,
+            548,
+            353,
+            253
+          ]
+        },
+        "created_at": "2026-09-08T20:16:58.663587+00:00"
+      },
+      {
+        "id": 81,
+        "experiment_id": 2,
+        "query_log_id": 87,
+        "benchmark_id": "q31",
+        "query": "Why can torch.cuda.is_available return false even when CUDA is installed?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 6225.5,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            568
+          ],
+          "retrieved_document_ids": [
+            568,
+            559,
+            561,
+            552,
+            818
+          ]
+        },
+        "created_at": "2026-09-08T20:17:08.495777+00:00"
+      },
+      {
+        "id": 82,
+        "experiment_id": 2,
+        "query_log_id": 88,
+        "benchmark_id": "q32",
+        "query": "Why might PostgreSQL report that type vector does not exist even after installing pgvector?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4554.6,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            584
+          ],
+          "retrieved_document_ids": [
+            584,
+            700,
+            572,
+            731,
+            722
+          ]
+        },
+        "created_at": "2026-09-08T20:17:15.999759+00:00"
+      },
+      {
+        "id": 83,
+        "experiment_id": 2,
+        "query_log_id": 89,
+        "benchmark_id": "q33",
+        "query": "How do I compile and install pgvector on Linux or macOS?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 5105.61,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            656
+          ],
+          "retrieved_document_ids": [
+            656,
+            721,
+            733,
+            657,
+            724
+          ]
+        },
+        "created_at": "2026-09-08T20:17:23.695364+00:00"
+      },
+      {
+        "id": 84,
+        "experiment_id": 2,
+        "query_log_id": 90,
+        "benchmark_id": "q34",
+        "query": "How do I enable pgvector and create a column for three-dimensional vectors?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4030.71,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            658
+          ],
+          "retrieved_document_ids": [
+            658,
+            699,
+            659,
+            700,
+            673
+          ]
+        },
+        "created_at": "2026-09-08T20:17:29.679836+00:00"
+      },
+      {
+        "id": 85,
+        "experiment_id": 2,
+        "query_log_id": 91,
+        "benchmark_id": "q35",
+        "query": "How do I find the nearest vectors in pgvector using a SQL query?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5723.25,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            660
+          ],
+          "retrieved_document_ids": [
+            660,
+            684,
+            669,
+            682,
+            673
+          ]
+        },
+        "created_at": "2026-09-08T20:17:39.107592+00:00"
+      },
+      {
+        "id": 86,
+        "experiment_id": 2,
+        "query_log_id": 92,
+        "benchmark_id": "q36",
+        "query": "How do I make asynchronous API calls with the OpenAI Python client?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4860.87,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            752
+          ],
+          "retrieved_document_ids": [
+            752,
+            753,
+            755,
+            758,
+            771
+          ]
+        },
+        "created_at": "2026-09-08T20:17:45.680662+00:00"
+      },
+      {
+        "id": 87,
+        "experiment_id": 2,
+        "query_log_id": 93,
+        "benchmark_id": "q37",
+        "query": "How do I stream responses with the OpenAI Python client?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5707.15,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            754
+          ],
+          "retrieved_document_ids": [
+            754,
+            771,
+            770,
+            745,
+            758
+          ]
+        },
+        "created_at": "2026-09-08T20:17:53.277391+00:00"
+      },
+      {
+        "id": 88,
+        "experiment_id": 2,
+        "query_log_id": 94,
+        "benchmark_id": "q38",
+        "query": "How do I select the Keras backend before importing Keras?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4308.73,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            838
+          ],
+          "retrieved_document_ids": [
+            838,
+            834,
+            839,
+            548,
+            836
+          ]
+        },
+        "created_at": "2026-09-08T20:18:00.066394+00:00"
+      },
+      {
+        "id": 89,
+        "experiment_id": 2,
+        "query_log_id": 95,
+        "benchmark_id": "q39",
+        "query": "What changes when I add an approximate index to pgvector's exact search?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 3994.11,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            663
+          ],
+          "retrieved_document_ids": [
+            663,
+            673,
+            691,
+            690,
+            694
+          ]
+        },
+        "created_at": "2026-09-08T20:18:06.977482+00:00"
+      },
+      {
+        "id": 90,
+        "experiment_id": 2,
+        "query_log_id": 96,
+        "benchmark_id": "q40",
+        "query": "How do I create an HNSW index for cosine distance in pgvector?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4466.49,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            664
+          ],
+          "retrieved_document_ids": [
+            684,
+            669,
+            664,
+            704,
+            681
+          ]
+        },
+        "created_at": "2026-09-08T20:18:13.615854+00:00"
+      },
+      {
+        "id": 91,
+        "experiment_id": 2,
+        "query_log_id": 97,
+        "benchmark_id": "q41",
+        "query": "How should I choose lists and probes when creating an IVFFlat vector index?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4524.75,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            669
+          ],
+          "retrieved_document_ids": [
+            669,
+            705,
+            670,
+            691,
+            677
+          ]
+        },
+        "created_at": "2026-09-08T20:18:20.639593+00:00"
+      },
+      {
+        "id": 92,
+        "experiment_id": 2,
+        "query_log_id": 98,
+        "benchmark_id": "q42",
+        "query": "Why can filtering a pgvector approximate query return fewer results than requested?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.3333333333333333,
+        "latency_ms": 3802.48,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            673,
+            674
+          ],
+          "retrieved_document_ids": [
+            674,
+            704,
+            705,
+            673,
+            663
+          ]
+        },
+        "created_at": "2026-09-08T20:18:26.761937+00:00"
+      },
+      {
+        "id": 93,
+        "experiment_id": 2,
+        "query_log_id": 99,
+        "benchmark_id": "q43",
+        "query": "Which OpenAI Python client errors are retried and how do I configure retries?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5078.45,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            766
+          ],
+          "retrieved_document_ids": [
+            766,
+            767,
+            779,
+            773,
+            776
+          ]
+        },
+        "created_at": "2026-09-08T20:18:34.758403+00:00"
+      },
+      {
+        "id": 94,
+        "experiment_id": 2,
+        "query_log_id": 100,
+        "benchmark_id": "q44",
+        "query": "How do I set a per-request timeout in the OpenAI Python client?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 4438.42,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            767
+          ],
+          "retrieved_document_ids": [
+            767,
+            766,
+            776,
+            967,
+            765
+          ]
+        },
+        "created_at": "2026-09-08T20:18:40.968231+00:00"
+      },
+      {
+        "id": 95,
+        "experiment_id": 2,
+        "query_log_id": 101,
+        "benchmark_id": "q45",
+        "query": "What is the build-time and memory tradeoff between HNSW and IVFFlat in pgvector?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5591.06,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            664,
+            669
+          ],
+          "retrieved_document_ids": [
+            669,
+            664,
+            688,
+            663,
+            667
+          ]
+        },
+        "created_at": "2026-09-08T20:18:48.508535+00:00"
+      },
+      {
+        "id": 96,
+        "experiment_id": 2,
+        "query_log_id": 102,
+        "benchmark_id": "q46",
+        "query": "How can I index embeddings with more than 2000 dimensions in pgvector?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4482.74,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            698
+          ],
+          "retrieved_document_ids": [
+            698,
+            699,
+            664,
+            669,
+            700
+          ]
+        },
+        "created_at": "2026-09-08T20:18:55.097119+00:00"
+      },
+      {
+        "id": 97,
+        "experiment_id": 2,
+        "query_log_id": 103,
+        "benchmark_id": "q47",
+        "query": "How does tape-based autograd let PyTorch support dynamic neural networks?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 1.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 4405.82,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            806
+          ],
+          "retrieved_document_ids": [
+            806,
+            803,
+            804,
+            810,
+            809
+          ]
+        },
+        "created_at": "2026-09-08T20:19:02.635952+00:00"
+      },
+      {
+        "id": 98,
+        "experiment_id": 2,
+        "query_log_id": 104,
+        "benchmark_id": "q48",
+        "query": "How can dense and keyword search be combined for a technical documentation retriever?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 0.5,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 1.0,
+        "latency_ms": 5232.96,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            683,
+            21
+          ],
+          "retrieved_document_ids": [
+            21,
+            38,
+            289,
+            646,
+            290
+          ]
+        },
+        "created_at": "2026-09-08T20:19:10.407136+00:00"
+      },
+      {
+        "id": 99,
+        "experiment_id": 2,
+        "query_log_id": 105,
+        "benchmark_id": "q49",
+        "query": "How can a RAG application ingest heterogeneous data and structure it for retrieval?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 0.0,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.3333333333333333,
+        "latency_ms": 5201.05,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            955,
+            7
+          ],
+          "retrieved_document_ids": [
+            30,
+            17,
+            21,
+            36,
+            9
+          ]
+        },
+        "created_at": "2026-09-08T20:19:19.788056+00:00"
+      },
+      {
+        "id": 100,
+        "experiment_id": 2,
+        "query_log_id": 106,
+        "benchmark_id": "q50",
+        "query": "How do inference serving techniques and hardware-aware model design address attention memory costs?",
+        "config": {
+          "use_hyde": true,
+          "use_expansion": true,
+          "use_reranking": true
+        },
+        "retrieval_recall": 0.5,
+        "faithfulness_score": 1.0,
+        "answer_relevance": 0.6666666666666666,
+        "latency_ms": 6442.26,
+        "status": "complete",
+        "error": null,
+        "metric_details": {
+          "faithfulness_status": "completed",
+          "relevant_document_ids": [
+            916,
+            108
+          ],
+          "retrieved_document_ids": [
+            108,
+            120,
+            138,
+            111,
+            127
+          ]
+        },
+        "created_at": "2026-09-08T20:19:28.507959+00:00"
+      }
+    ]
+  }
+}

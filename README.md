@@ -14,7 +14,7 @@ Long content is split into chunks of up to 1,800 characters with overlap. Docume
 
 Embedding is a separate step. `/embed` processes pending chunks in batches of 50 using OpenAI's `text-embedding-3-small` model and stores 1,536-dimensional vectors in pgvector.
 
-Before hybrid retrieval, `gpt-4o-mini` generates a hypothetical technical passage (HyDE) for dense embedding and related terms for BM25. The two calls run concurrently. Reranking still uses the original question. If either enhancement fails, that part falls back to the original query.
+Before hybrid retrieval, `gpt-4o-mini` generates a hypothetical technical passage (HyDE) for dense embedding and related terms for BM25. Both enhancements are independently optional; when enabled together, the two calls run concurrently. Reranking still uses the original question. If either enhancement fails, that part falls back to the original query.
 
 Search combines cosine similarity and BM25 using reciprocal rank fusion. Optional reranking uses `cross-encoder/ms-marco-MiniLM-L-6-v2`. The model downloads on the first reranked search, which can take longer.
 
@@ -54,7 +54,7 @@ curl -X POST http://localhost:8001/query \
   -d '{"query": "how does multi-head attention work in transformers"}'
 ```
 
-`POST /query` accepts `query`, `use_hyde` (default `true`), and `use_reranking` (default `true`). It returns:
+`POST /query` accepts `query`, `use_hyde`, `use_reranking`, and `use_expansion` (all flags default to `true`). It returns:
 
 - `answer`: text with inline `[Source N]` citations.
 - `sources`: numbered sources with document ID, domain, title, URL, and the exact chunk text supplied to the model.
@@ -78,16 +78,19 @@ The endpoint is non-streaming. Invalid requests return 422; model timeouts retur
 | `POST /query` | Answer a question using retrieved sources |
 | `GET /query/{log_id}/faithfulness` | Poll the judge status, score, and claim verdicts |
 | `GET /logs?limit=20` | Read recent query logs and metrics |
+| `POST /experiments` | Queue a 50-question run with an explicit pipeline config |
+| `GET /experiments/{id}` | Read progress and per-question metrics |
+| `GET /experiments/compare?exp_a=1&exp_b=2` | Compare two finished runs using paired statistics |
 | `GET /health` | Basic API health check |
 | `POST /ingest/arxiv` | Ingest arXiv abstracts |
 | `POST /ingest/github` | Ingest GitHub READMEs |
 | `POST /ingest/stackoverflow` | Ingest questions and accepted answers |
 | `POST /embed` | Embed pending chunks |
 | `GET /search/bm25` | Keyword search |
-| `GET /search/hybrid` | Combined search; optional `rerank=false` and `hyde=false` |
+| `GET /search/hybrid` | Combined search; optional `rerank=false`, `hyde=false`, and `expansion=false` |
 | `GET /stats` | Chunk counts by source and embedding status |
 
-`hyde=false` disables the hypothetical passage; query expansion remains enabled. `/search/bm25` continues to use the original query. Enhancement calls have a 10-second SDK timeout and no automatic retries.
+`hyde=false` disables the hypothetical passage; set `expansion=false` separately to disable query expansion. `/search/bm25` continues to use the original query. Enhancement calls have a 10-second SDK timeout and no automatic retries.
 
 Both search endpoints accept `query` and `k` (1–100, default 5). Hybrid search returns content, source URLs, metadata, and retrieval scores.
 
@@ -172,7 +175,7 @@ LIMIT 5;
 
 ## Day 11 verification
 
-The automated suite now has 46 passing tests, including log persistence across separate sessions, polling states, invalid citations, judge parsing, strict booleans, and generation failure logs. PostgreSQL created the new table and indexes successfully; the 984 source chunks were unchanged.
+At Day 11, the automated suite had 46 passing tests, including log persistence across separate sessions, polling states, invalid citations, judge parsing, strict booleans, and generation failure logs. PostgreSQL created the new table and indexes successfully; the 984 source chunks were unchanged.
 
 Six live `/query` requests returned immediately with a null score and a pending polling state, then received persisted evaluations. In the initial run, the five technical questions scored 0.83–1.00. The France question declined to answer and received `not_applicable`. Warm foreground responses took roughly 3.5–8 seconds; the first request took about 22 seconds with model initialization. These measurements are smoke checks, not a benchmark.
 
@@ -180,13 +183,56 @@ Reviewing the stored claims caught a judge mistake: it inverted a CUDA answer's 
 
 ## Generation limits and reading
 
-Day 11 adds reference validation and background faithfulness scoring. It does not verify the meaning of each citation independently, guarantee complete claim extraction, or establish source correctness. The broader benchmark and retrieval metrics remain for Day 12.
+Day 11 adds reference validation and background faithfulness scoring. It does not verify the meaning of each citation independently, guarantee complete claim extraction, or establish source correctness. Day 13 adds the development benchmark and annotated retrieval metrics described below.
 
 Structured outputs constrain JSON shape, not factual accuracy. See [OpenAI structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs). Streaming can be added later using [OpenAI streaming](https://developers.openai.com/api/docs/guides/streaming-responses) and [FastAPI StreamingResponse](https://fastapi.tiangolo.com/advanced/stream-data/).
 
 Retrieved documents can contain malicious instructions. Corpus poisoning introduces such content into the index; once retrieved, it can influence the answer. The system prompt treats context as untrusted data, but this is only one layer. Production defenses also need trusted ingestion, access controls, output checks, and restricted tool permissions. This generator has no execution tools. See the [OWASP RAG security guide](https://cheatsheetseries.owasp.org/cheatsheets/RAG_Security_Cheat_Sheet.html).
 
+## A/B experiments (Day 13)
+
+A fixed set of 50 questions now compares pipeline configurations across all three sources and three difficulty levels. Runs save each query's metrics separately and link back to the full query log. See [the experiment guide](docs/EXPERIMENTS.md) for commands, schema, calculations, and limitations.
+
+```bash
+curl -X POST http://localhost:8001/experiments \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"baseline","config":{"use_hyde":false,"use_reranking":false,"use_expansion":false}}'
+
+curl -X POST http://localhost:8001/experiments \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"full_pipeline","config":{"use_hyde":true,"use_reranking":true,"use_expansion":true}}'
+
+# Use the experiment IDs returned above.
+curl http://localhost:8001/experiments/1
+curl 'http://localhost:8001/experiments/compare?exp_a=1&exp_b=2'
+```
+
+Use a single API worker without `--reload` for experiments. Runs are sequential background tasks inside that process; restarting interrupts them. Leave the corpus unchanged while comparing. The benchmark validates its labelled chunk identities and content hashes, so a different corpus needs reviewed labels before it can run.
+
+The metrics are **annotated chunk recall@5**, claim faithfulness, **keyword coverage** (stored as `answer_relevance`), and foreground latency. Supporting-source labels are incomplete, and keywords are a relevance proxy. Failed or no-claim evaluations stay null and are excluded pairwise, with counts reported. The comparator returns means, sample standard deviations, B−A differences, percentage improvements, two-sided paired t-test p-values, and Holm-adjusted significance across four metrics.
+
+A versus B (reranking only) tests the existing reranking path, including its larger candidate pool. A versus C (HyDE only) tests HyDE. B versus D changes both HyDE and expansion, so it does not isolate HyDE. The initial A/D runs assess the combined configuration only.
+
+### First measured comparison
+
+Experiments **1 (baseline)** and **2 (full pipeline)** each completed all 50 questions against the same 984 embedded chunks, with no generation or judge failures. All four comparisons have 50 paired observations. The [saved JSON report](docs/experiments/baseline-vs-full.json) contains full-precision statistics, per-question metrics, query-log IDs, and run metadata.
+
+| Metric | Baseline mean ± sample SD | Full mean ± sample SD | Paired p-value | Holm-adjusted p |
+| --- | --- | --- | --- | --- |
+| Annotated chunk recall@5 | 0.960 ± 0.137 | 0.960 ± 0.170 | 1.000 | 1.000 |
+| Judge faithfulness | 0.979 ± 0.062 | 1.000 ± 0.000 | 0.0226 | 0.0677 |
+| Keyword coverage | 0.900 ± 0.193 | 0.900 ± 0.205 | 1.000 | 1.000 |
+| Foreground latency, seconds | 2.401 ± 0.926 | 5.080 ± 0.809 | 1.90 × 10⁻²³ | 7.59 × 10⁻²³ |
+
+The full pipeline did **not** improve average annotated recall or keyword coverage in this run. Faithfulness increased by 2.07 percentage points (2.12% relative), with an unadjusted p < 0.05, but the difference is not significant after the four-metric correction. Its 1.000 score is the judge's verdict, not proof of perfect accuracy. Mean foreground latency increased by 2.679 seconds, or 111.56%; this slowdown remains significant after correction.
+
+Equal aggregate recall does not mean retrieval was unchanged: q01 improved from 0.5 to 1.0, while q49 fell from 0.5 to 0.0 against its annotated sources. These changes cancel in the mean. Database checks confirmed that baseline used the original text for both retrieval paths on all 50 questions, while the full run generated a different HyDE passage and expansion on all 50.
+
+These results do not support claiming a general retrieval improvement. The benchmark is corpus-grounded and already has high baseline recall; labels are incomplete and the answer judge needs human calibration. Baseline ran first and full pipeline second, so latency also reflects sequential API conditions. More representative questions, repeated runs, and individual ablations are needed before attributing benefits to HyDE or reranking.
+
 ## Tests
+
+All **60 automated tests** pass. Live verification also checked all 100 result-to-log links, config flags, recall calculations, claim-score fractions, and paired statistics against PostgreSQL. The corpus remained at 984 embedded chunks.
 
 ```bash
 python -m unittest discover -s tests -v

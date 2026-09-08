@@ -1,12 +1,12 @@
 # DEVmind RAG: how the project works
 
-Implementation guide through Day 10, with a Day 11 update · 7 September 2026
+Implementation guide through Day 13 · 9 September 2026
 
 This document explains the code currently in this repository: what has been built, how the parts connect, why they exist, and what they do not guarantee. Implementation details come from the linked source files. Test results and corpus counts are recorded observations from the previous verification, not measurements taken every time this document is opened.
 
 ## Contents
 
-> Sections 1–16 describe the Day 10 snapshot. Section 17 records the Day 11 changes and supersedes earlier statements that citation validation, faithfulness scoring, or query logging are still planned.
+> Sections 1–16 describe the Day 10 snapshot. Section 17 records Day 11; section 18 records Day 13. These updates supersede earlier statements that citation checks, logging, evaluation, or an expansion toggle are still planned.
 
 1. [What you have built](#1-what-you-have-built)
 2. [Architecture and technology choices](#2-architecture-and-technology-choices)
@@ -25,6 +25,7 @@ This document explains the code currently in this repository: what has been buil
 15. [Development milestones and next steps](#15-development-milestones-and-next-steps)
 16. [Code map and project explanation](#16-code-map-and-project-explanation)
 17. [Day 11 update: citation verification and faithfulness](#17-day-11-update-citation-verification-and-faithfulness)
+18. [Day 13 update: experiments and metrics](#18-day-13-update-experiments-and-metrics)
 
 ## 1. What you have built
 
@@ -772,3 +773,47 @@ LLM judging needs calibration with human review, as discussed in [Anthropic's ev
 The expanded suite passed 46 tests. Live testing created six logs: five technical questions and one unrelated question about France. All responses initially exposed a null score and pending status. The five initial numeric scores ranged from 0.83 to 1.00; the unrelated query abstained and was marked not applicable. Table indexes and persisted timing/configuration JSON were checked against PostgreSQL, and source row counts remained at 984.
 
 Manual claim review also found a judge error involving negation, leading to a prompt refinement. A controlled supported/unsupported pair scored 0.5 afterward. Rejudging an existing answer changed its verdict, so these results must not be treated as calibrated reliability measures. Initial logs remain unchanged for transparency. The response arrives before scoring; the client can observe pending status while the judge is still working.
+
+
+## 18. Day 13 update: experiments and metrics
+
+The project now has a repeatable way to compare pipeline configurations. Day 12's evaluation harness was not present, so Day 13 also adds its 50-question benchmark. The [experiment guide](EXPERIMENTS.md) gives the full operating instructions, formulas, schema, and statistical caveats.
+
+### Why this was added
+
+Changing retrieval can change the answer without improving it. A fixed question set gives each configuration the same tasks. Saving per-question results makes it possible to inspect regressions and compare matched scores rather than relying on a few memorable answers.
+
+[benchmarks.py](../app/evaluation/benchmarks.py) contains 50 questions covering arXiv, GitHub, Stack Overflow, and cross-domain synthesis at three difficulty levels. Each has expected keywords and labelled supporting chunks. These labels were built against the current corpus before running either configuration. Source IDs, URLs, parent IDs, domains, and content hashes make accidental reuse against a different corpus detectable. They identify known supporting passages, not all relevant documents.
+
+### Independent configuration flags
+
+`use_expansion` now joins `use_hyde` and `use_reranking` in `/query` and experiment configs. Hybrid search exposes the equivalent `expansion` parameter. When both query enhancements are false, query understanding makes no model calls; dense search embeds the original question and BM25 receives its original text. When both are true, their calls still overlap through `asyncio.gather`.
+
+The standard configs are A: all off; B: reranking only; C: HyDE only; D: all on. Comparing A/D tests the combined configuration. B/D changes two flags, so it cannot isolate HyDE. Enabling reranking also expands the retrieval candidate pool from five to twenty before selecting the final five; keep that distinction in mind when describing its contribution.
+
+### From API request to stored result
+
+`POST /experiments` validates the labels, commits an `Experiment` row, schedules work, and returns HTTP 202 with its ID. The row snapshots config, benchmark, and corpus fingerprint. The runner serializes experiments inside the API process and warms the tokenizer and optional reranker before timing.
+
+Each question uses the existing generator and the shared [query_logging.py](../app/evaluation/query_logging.py). The answer, actual model context, citation diagnostics, flags, and timings are committed to `QueryLog`. The runner waits for that log's faithfulness job, then commits an `ExperimentResult` with the metrics, question ID, config, and foreign keys to its experiment and log. It stores retrieved chunk IDs for auditing recall but does not duplicate the answer and context.
+
+Generation failures are recorded and the loop continues. A judge failure retains the other metrics but leaves faithfulness null. No-claim answers also have null faithfulness, with an explicit status. Results survive subsequent failures because each query is committed separately. A server restart can still interrupt an in-flight query: these are process-local background tasks, not a durable job queue.
+
+`GET /experiments/{id}` exposes progress and saved results. The comparison endpoint accepts two finished runs with identical benchmark snapshots and corpus fingerprints. It rejects unfinished, failed, or incompatible runs rather than mixing them silently.
+
+### Reading the numbers
+
+Retrieval recall is the fraction of annotated supporting chunks found among the top five results **before** context deduplication. It does not measure how much evidence survives trimming or deduplication. Faithfulness retains Day 11's supported-claim fraction. `answer_relevance` is case-insensitive keyword coverage with explicit alternatives and word boundaries; it is not semantic relevance. Latency measures the foreground pipeline, excluding the judge and initial model loading.
+
+The comparator pairs question IDs and text, discards missing values per metric, and reports both means on the same subset. Standard deviations are sample standard deviations. Quality percentage improvement uses B−A; latency reverses the direction because less time is better. It reports a two-sided paired t-test and a Holm correction for four metrics. Significance is separate from direction: a statistically significant slowdown is still a regression.
+
+This is a developmental benchmark drawn from this corpus. The labels are incomplete, keywords miss paraphrases, and the same model family writes and judges the answers. The first runs are useful engineering evidence for these questions, not an independent estimate of all technical questions or a guarantee of factual accuracy. Repeated runs, human label review, and held-out questions are the next steps for stronger claims.
+
+### Files and verification
+
+The new implementation lives in `app/evaluation/benchmarks.py`, `experiment_runner.py`, `metrics.py`, `comparator.py`, and `query_logging.py`. `Experiment` and `ExperimentResult` are defined in `app/models.py`; the existing startup `create_all` creates their tables and indexes. No document reingestion or existing query-log schema migration is needed.
+
+Tests cover all enhancement flag combinations, paired matching despite reordered rows, missing values, zero baselines, degenerate statistics, query-by-query persistence, generation failure continuation, duplicate-run prevention, source mismatches, and API validation. Live comparison results and their scope are recorded in the [README](../README.md#ab-experiments-day-13).
+
+
+Both live runs completed all 50 questions with no errors. Annotated recall stayed at 0.96 and keyword coverage at 0.90. Judge faithfulness moved from 0.9793 to 1.0000, but its Holm-adjusted p-value was 0.0677. Foreground latency rose from 2.401 to 5.080 seconds on average. This first comparison therefore does not establish a quality gain after accounting for the four tests, and it does show a latency cost. All 60 automated tests pass; all 100 live metric rows were checked against their query logs and paired statistics were independently recalculated from PostgreSQL.
