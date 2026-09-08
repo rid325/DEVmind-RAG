@@ -8,8 +8,10 @@ from app.generation.generator import GenerationError, QueryRequest, QueryRespons
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import engine, Base, get_db
-from app.models import Document, QueryLog
-from app.evaluation.citation_verifier import verify_citations
+from app.models import Document, QueryLog, Experiment, ExperimentResult
+from app.evaluation.experiment_runner import ExperimentRequest, create_experiment, run_experiment
+from app.evaluation.comparator import compare_experiments
+from app.evaluation.query_logging import save_query_log, record_generation_failure
 from app.evaluation.faithfulness import run_faithfulness_job
 from app.ingestion.arxiv_ingester import run_arxiv_ingestion
 from app.ingestion.stackoverflow_ingester import run_stackoverflow_ingestion
@@ -101,10 +103,10 @@ def search_bm25(query: SearchQuery, k: ResultCount = 5, db: Session = Depends(ge
     return {"results": response}
 
 @app.get("/search/hybrid")
-def hybrid_search_endpoint(query: SearchQuery, k: ResultCount = 5, rerank: bool = True, hyde: bool = True, db: Session = Depends(get_db)):
+def hybrid_search_endpoint(query: SearchQuery, k: ResultCount = 5, rerank: bool = True, hyde: bool = True, expansion: bool = True, db: Session = Depends(get_db)):
     start_time = time.time()
 
-    results = search_hybrid(db, query, k=k, rerank=rerank, use_hyde=hyde)
+    results = search_hybrid(db, query, k=k, rerank=rerank, use_hyde=hyde, use_expansion=expansion)
 
     end_time = time.time()
     logging.info("Search completed in %.3f seconds (rerank=%s, hyde=%s)", end_time - start_time, rerank, hyde)
@@ -152,23 +154,13 @@ def stats(db: Session = Depends(get_db)):
     }
 
 
-def record_generation_failure(db: Session, request: QueryRequest, start: float, error: Exception):
-    db.rollback()
-    db.add(QueryLog(
-        query=request.query,
-        total_latency_ms=round((time.perf_counter() - start) * 1000, 2),
-        faithfulness_status="generation_failed",
-        evaluation_error=type(error).__name__,
-        config={"use_hyde": request.use_hyde, "use_reranking": request.use_reranking},
-    ))
-    db.commit()
 
 
 @app.post("/query", response_model=QueryResponse)
 def query_endpoint(request: QueryRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     start = time.perf_counter()
     try:
-        result = generate_answer(db, request.query, use_hyde=request.use_hyde, use_reranking=request.use_reranking)
+        result = generate_answer(db, request.query, use_hyde=request.use_hyde, use_reranking=request.use_reranking, use_expansion=request.use_expansion)
     except APITimeoutError as exc:
         record_generation_failure(db, request, start, exc)
         raise HTTPException(status_code=504, detail="The model request timed out. Please try again.") from exc
@@ -177,34 +169,7 @@ def query_endpoint(request: QueryRequest, background_tasks: BackgroundTasks, db:
         logging.warning("Query failed: %s", type(exc).__name__)
         raise HTTPException(status_code=502, detail="Could not generate an answer. Please try again.") from exc
 
-    citation_start = time.perf_counter()
-    citations = verify_citations(result.answer, result.sources)
-    result.citation_valid = citations["all_citations_valid"]
-    stages = dict(result.stage_latency_ms)
-    stages["citation_verification"] = round((time.perf_counter() - citation_start) * 1000, 2)
-    log_start = time.perf_counter()
-    log = QueryLog(
-        query=request.query,
-        hyde_query=result.hyde_query,
-        expanded_query=result.expanded_query,
-        chunks_retrieved=result.chunks_retrieved,
-        reranker_scores=[score.model_dump() for score in result.retrieval_scores],
-        answer=result.answer,
-        sources=[source.model_dump() for source in result.sources],
-        citation_valid=result.citation_valid,
-        citation_details=citations,
-        faithfulness_status="pending",
-        total_latency_ms=result.latency_ms,
-        config={"use_hyde": request.use_hyde, "use_reranking": request.use_reranking},
-    )
-    db.add(log)
-    db.flush()
-    result.log_id = log.id
-    stages["logging"] = round((time.perf_counter() - log_start) * 1000, 2)
-    result.latency_ms = round((time.perf_counter() - start) * 1000, 2)
-    log.total_latency_ms = result.latency_ms
-    log.stage_latency_ms = stages
-    db.commit()
+    save_query_log(db, request, result, start)
     background_tasks.add_task(run_faithfulness_job, result.log_id)
     # Faithfulness is deliberately null here; the background task updates the log.
     return result
@@ -233,3 +198,41 @@ def recent_logs(limit: Annotated[int, Query(ge=1, le=100)] = 20, db: Session = D
         {column.name: getattr(log, column.name) for column in QueryLog.__table__.columns}
         for log in logs
     ]}
+
+
+# Keep /compare before the integer path so it is not parsed as an experiment ID.
+@app.post("/experiments", status_code=202)
+def start_experiment(request: ExperimentRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    try:
+        experiment = create_experiment(db, request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    background_tasks.add_task(run_experiment, experiment.id)
+    return {"experiment_id": experiment.id, "status": experiment.status, "total_queries": len(experiment.benchmark_snapshot)}
+
+
+@app.get("/experiments/compare")
+def experiment_comparison(exp_a: int, exp_b: int, db: Session = Depends(get_db)):
+    try:
+        return compare_experiments(db, exp_a, exp_b)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.get("/experiments/{experiment_id}")
+def experiment_status(experiment_id: int, db: Session = Depends(get_db)):
+    experiment = db.get(Experiment, experiment_id)
+    if experiment is None:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+    results = db.query(ExperimentResult).filter_by(experiment_id=experiment_id).order_by(ExperimentResult.benchmark_id).all()
+    return {
+        "experiment_id": experiment.id, "name": experiment.name, "description": experiment.description,
+        "config": experiment.config, "status": experiment.status, "error": experiment.error,
+        "benchmark_version": experiment.benchmark_version, "corpus_fingerprint": experiment.corpus_fingerprint,
+        "created_at": experiment.created_at, "completed_at": experiment.completed_at,
+        "progress": {"completed": len(results), "total": len(experiment.benchmark_snapshot),
+                     "failed": sum(row.status != "complete" for row in results)},
+        "results": [{column.name: getattr(row, column.name) for column in ExperimentResult.__table__.columns} for row in results],
+    }

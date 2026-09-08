@@ -36,3 +36,4 @@ openai
 rank_bm25
 sentence_transformers
 tiktoken
+scipy

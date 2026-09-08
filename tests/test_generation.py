@@ -62,13 +62,15 @@ class GeneratorTests(unittest.TestCase):
 
     def test_pipeline_uses_actual_context_and_server_metadata(self):
         response = g.generate_answer(MagicMock(), 'question', use_hyde=False, use_reranking=False)
-        self.process.assert_awaited_once_with('question', use_hyde=False)
+        self.process.assert_awaited_once_with('question', use_hyde=False, use_expansion=True)
         self.assertIs(self.search.call_args.kwargs['enhanced'], self.enhanced)
         messages = self.create.call_args.kwargs['messages']
         self.assertIn('A supported fact.', messages[1]['content'])
         self.assertNotIn('HYPOTHETICAL TEXT', messages[1]['content'])
         self.assertTrue(self.create.call_args.kwargs['response_format']['json_schema']['strict'])
         self.assertEqual(response.sources[0].document_id, 1)
+        self.assertEqual(response.retrieved_document_ids, [1])
+        self.assertNotIn('retrieved_document_ids', response.model_dump())
         self.assertEqual(response.retrieval_scores[0].reranker_score, 4.5)
         self.assertGreaterEqual(response.latency_ms, 0)
 
@@ -110,10 +112,10 @@ class EndpointTests(unittest.TestCase):
         output = g.QueryResponse(answer='Insufficient context.', sources=[], query='question',
                                  hyde_query='question', retrieval_scores=[], latency_ms=1)
         with patch.object(main, 'generate_answer', return_value=output) as generate:
-            response = self.client.post('/query', json={'query': ' question ', 'use_hyde': False, 'use_reranking': False})
+            response = self.client.post('/query', json={'query': ' question ', 'use_hyde': False, 'use_reranking': False, 'use_expansion': False})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(generate.call_args.args[1], 'question')
-        self.assertEqual(generate.call_args.kwargs, {'use_hyde': False, 'use_reranking': False})
+        self.assertEqual(generate.call_args.kwargs, {'use_hyde': False, 'use_reranking': False, 'use_expansion': False})
 
     def test_invalid_requests_skip_pipeline(self):
         with patch.object(main, 'generate_answer') as generate:

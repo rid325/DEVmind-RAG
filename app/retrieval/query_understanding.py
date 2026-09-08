@@ -79,17 +79,20 @@ async def expand_query(query: str) -> str:
         return query
 
 
-async def process_query(query: str, use_hyde: bool = True) -> EnhancedQuery:
+async def process_query(query: str, use_hyde: bool = True, use_expansion: bool = True) -> EnhancedQuery:
     query = query.strip()
     if not query:
         return EnhancedQuery(query, query, query)
 
-    if use_hyde:
+    passage, expanded = query, query
+    if use_hyde and use_expansion:
         passage, expanded = await asyncio.gather(generate_hyde(query), expand_query(query))
-    else:
-        passage, expanded = query, await expand_query(query)
+    elif use_hyde:
+        passage = await generate_hyde(query)
+    elif use_expansion:
+        expanded = await expand_query(query)
 
-    logger.info("Query understanding: hyde=%s, expansion=true", use_hyde)
+    logger.info("Query understanding: hyde=%s, expansion=%s", use_hyde, use_expansion)
     logger.debug("HyDE passage: %s", passage)
     logger.debug("Expanded query: %s", expanded)
     return EnhancedQuery(query, passage, expanded)

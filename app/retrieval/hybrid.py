@@ -24,14 +24,14 @@ def rrf_merge(dense_results: list[tuple[int, float]], sparse_results: list[tuple
     sorted_results = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
     return sorted_results
 
-def search_hybrid(db: Session, query: str, k: int = 5, rerank: bool = True, use_hyde: bool = True, enhanced: EnhancedQuery | None = None, timings: dict | None = None) -> list:
+def search_hybrid(db: Session, query: str, k: int = 5, rerank: bool = True, use_hyde: bool = True, enhanced: EnhancedQuery | None = None, timings: dict | None = None, use_expansion: bool = True) -> list:
     if not query.strip() or k <= 0:
         return []
 
     fetch_k = max(20, k) if rerank else k
     # FastAPI runs this synchronous search in a worker thread.
     if enhanced is None:
-        enhanced = asyncio.run(process_query(query, use_hyde=use_hyde))
+        enhanced = asyncio.run(process_query(query, use_hyde=use_hyde, use_expansion=use_expansion))
     start = perf_counter()
     query_vectors = get_embeddings([enhanced.hyde_passage])
     if not query_vectors:

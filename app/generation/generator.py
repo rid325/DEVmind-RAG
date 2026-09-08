@@ -34,6 +34,7 @@ class QueryRequest(BaseModel):
     query: str = Field(min_length=1, max_length=2000)
     use_hyde: bool = True
     use_reranking: bool = True
+    use_expansion: bool = True
 
 
 class Source(BaseModel):
@@ -63,6 +64,7 @@ class QueryResponse(BaseModel):
     faithfulness_score: float | None = None
     expanded_query: str = Field(default="", exclude=True)
     chunks_retrieved: int = Field(default=0, exclude=True)
+    retrieved_document_ids: list[int] = Field(default_factory=list, exclude=True)
     stage_latency_ms: dict[str, float] = Field(default_factory=dict, exclude=True)
 
 
@@ -135,12 +137,12 @@ def build_messages(context: str, query: str) -> list[dict]:
     ]
 
 
-def generate_answer(db: Session, query: str, use_hyde: bool = True, use_reranking: bool = True) -> QueryResponse:
+def generate_answer(db: Session, query: str, use_hyde: bool = True, use_reranking: bool = True, use_expansion: bool = True) -> QueryResponse:
     start = perf_counter()
-    enhanced = asyncio.run(process_query(query, use_hyde=use_hyde))
+    enhanced = asyncio.run(process_query(query, use_hyde=use_hyde, use_expansion=use_expansion))
     understood = perf_counter()
     timings = {}
-    results = search_hybrid(db, query, k=5, rerank=use_reranking, use_hyde=use_hyde, enhanced=enhanced, timings=timings)
+    results = search_hybrid(db, query, k=5, rerank=use_reranking, use_hyde=use_hyde, enhanced=enhanced, timings=timings, use_expansion=use_expansion)
     retrieved = perf_counter()
     context, sources = assemble_context(results)
     assembled = perf_counter()
@@ -203,4 +205,5 @@ def generate_answer(db: Session, query: str, use_hyde: bool = True, use_rerankin
         answer=answer, sources=sources, query=query, hyde_query=enhanced.hyde_passage,
         retrieval_scores=scores, latency_ms=round((end-start)*1000, 2),
         expanded_query=enhanced.expanded_query, chunks_retrieved=len(results), stage_latency_ms=timings,
+        retrieved_document_ids=[item[0].id for item in results],
     )

@@ -209,7 +209,7 @@ class EnhancedRetrievalTests(unittest.TestCase):
              patch.object(hybrid, 'search_bm25', return_value=[]) as sparse, \
              patch.object(reranker, 'rerank', return_value=[]) as rerank:
             hybrid.search_hybrid(db, 'attention', use_hyde=True)
-        process.assert_awaited_once_with('attention', use_hyde=True)
+        process.assert_awaited_once_with('attention', use_hyde=True, use_expansion=True)
         embed.assert_called_once_with(['Hypothetical passage'])
         sparse.assert_called_once_with('attention alignment', k=20)
         self.assertEqual(rerank.call_args.args[0], 'attention')
