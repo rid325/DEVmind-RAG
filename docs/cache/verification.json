@@ -1,0 +1,393 @@
+{
+  "before": {
+    "total_documents": 984,
+    "by_domain": {
+      "arxiv": 491,
+      "stackoverflow": 118,
+      "github": 375
+    },
+    "embedded": 984,
+    "pending_embedding": 0,
+    "cache": {
+      "available": true,
+      "corpus_version": "1789150056985412001",
+      "exact_entries": 0,
+      "semantic_entries": 0,
+      "redis_db_keys": 1
+    }
+  },
+  "requests": [
+    {
+      "query": "how does multi-head attention work",
+      "cache": "miss",
+      "cache_hit_query": null,
+      "cache_similarity": null,
+      "latency_ms": 14949.62,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "cold_miss",
+      "wall_ms": 14974.22
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 15.61,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_1",
+      "wall_ms": 25.38
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 11.22,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_2",
+      "wall_ms": 14.31
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 8.1,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_3",
+      "wall_ms": 11.15
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 8.1,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_4",
+      "wall_ms": 11.23
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 9.14,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_5",
+      "wall_ms": 12.08
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 8.05,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_6",
+      "wall_ms": 12.16
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 7.82,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_7",
+      "wall_ms": 10.88
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 7.69,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_8",
+      "wall_ms": 10.71
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 7.14,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_9",
+      "wall_ms": 10.23
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 8.03,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "exact_10",
+      "wall_ms": 11.09
+    },
+    {
+      "query": "HOW DOES MULTI-HEAD ATTENTION WORK",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 7.0,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "case_whitespace",
+      "wall_ms": 10.73
+    },
+    {
+      "query": "how does multi-head attention work?",
+      "cache": "semantic",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": 0.9842145442962646,
+      "latency_ms": 726.04,
+      "log_id": 107,
+      "faithfulness_score": null,
+      "label": "punctuation_variant",
+      "wall_ms": 730.23
+    },
+    {
+      "query": "explain multi-head attention mechanism",
+      "cache": "miss",
+      "cache_hit_query": null,
+      "cache_similarity": null,
+      "latency_ms": 6738.41,
+      "log_id": 108,
+      "faithfulness_score": null,
+      "label": "brief_paraphrase",
+      "wall_ms": 6759.04
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "miss",
+      "cache_hit_query": null,
+      "cache_similarity": null,
+      "latency_ms": 2550.23,
+      "log_id": 109,
+      "faithfulness_score": null,
+      "label": "separate_config",
+      "wall_ms": 2568.33
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "bypass",
+      "cache_hit_query": null,
+      "cache_similarity": null,
+      "latency_ms": 6303.13,
+      "log_id": 110,
+      "faithfulness_score": null,
+      "label": "explicit_bypass",
+      "wall_ms": 6312.73
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 7.24,
+      "log_id": 107,
+      "faithfulness_score": 0.8333333333333334,
+      "label": "exact_after_judging",
+      "wall_ms": 8.44
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "miss",
+      "cache_hit_query": null,
+      "cache_similarity": null,
+      "latency_ms": 5875.34,
+      "log_id": 111,
+      "faithfulness_score": null,
+      "label": "after_invalidation",
+      "wall_ms": 5895.39
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 15.92,
+      "log_id": 111,
+      "faithfulness_score": null,
+      "label": "after_invalidation_repeat",
+      "wall_ms": 23.87
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "miss",
+      "cache_hit_query": null,
+      "cache_similarity": null,
+      "latency_ms": 4788.55,
+      "log_id": 112,
+      "faithfulness_score": null,
+      "label": "redis_down",
+      "wall_ms": 4795.09
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "miss",
+      "cache_hit_query": null,
+      "cache_similarity": null,
+      "latency_ms": 4873.73,
+      "log_id": 113,
+      "faithfulness_score": null,
+      "label": "redis_recovered_miss",
+      "wall_ms": 4890.63
+    },
+    {
+      "query": "how does multi-head attention work",
+      "cache": "exact",
+      "cache_hit_query": "how does multi-head attention work",
+      "cache_similarity": null,
+      "latency_ms": 7.24,
+      "log_id": 113,
+      "faithfulness_score": null,
+      "label": "redis_recovered_hit",
+      "wall_ms": 11.12
+    }
+  ],
+  "after": {
+    "total_documents": 984,
+    "by_domain": {
+      "arxiv": 491,
+      "stackoverflow": 118,
+      "github": 375
+    },
+    "embedded": 984,
+    "pending_embedding": 0,
+    "cache": {
+      "available": true,
+      "corpus_version": "1789150056985412001",
+      "exact_entries": 3,
+      "semantic_entries": 3,
+      "redis_db_keys": 7
+    }
+  },
+  "exact_wall_median_ms": 11.190000000000001,
+  "brief_paraphrase_cosine": 0.9075594544410706,
+  "stored_entries": [
+    {
+      "key": "devmind:cache:v1:1789150056985412001:1f4a742a85406f1d:semantic:f90ba5aa538432c5da3975ba023f1e11",
+      "type": "hash",
+      "ttl_seconds": 86244
+    },
+    {
+      "key": "devmind:cache:v1:1789150056985412001:13b406eb68eae83d:exact:f90ba5aa538432c5da3975ba023f1e11",
+      "type": "string",
+      "ttl_seconds": 86254
+    },
+    {
+      "key": "devmind:cache:v1:1789150056985412001:13b406eb68eae83d:semantic:f90ba5aa538432c5da3975ba023f1e11",
+      "type": "hash",
+      "ttl_seconds": 86254
+    },
+    {
+      "key": "devmind:cache:v1:1789150056985412001:1f4a742a85406f1d:semantic:adae1e2b3f092bb13840d4bcbbc12092",
+      "type": "hash",
+      "ttl_seconds": 86251
+    },
+    {
+      "key": "devmind:cache:v1:1789150056985412001:1f4a742a85406f1d:exact:adae1e2b3f092bb13840d4bcbbc12092",
+      "type": "string",
+      "ttl_seconds": 86251
+    },
+    {
+      "key": "devmind:cache:v1:1789150056985412001:1f4a742a85406f1d:exact:f90ba5aa538432c5da3975ba023f1e11",
+      "type": "string",
+      "ttl_seconds": 86244
+    }
+  ],
+  "real_redis_ttl_expiry_verified": true,
+  "invalidation": {
+    "before": {
+      "available": true,
+      "corpus_version": "1789150056985412001",
+      "exact_entries": 3,
+      "semantic_entries": 3,
+      "redis_db_keys": 7
+    },
+    "after": {
+      "available": true,
+      "corpus_version": "1789150056985412002",
+      "exact_entries": 0,
+      "semantic_entries": 0,
+      "redis_db_keys": 7
+    },
+    "old_keys_retained": true,
+    "documents_unchanged": true
+  },
+  "redis_down_stats": {
+    "available": false,
+    "corpus_version": null,
+    "exact_entries": null,
+    "semantic_entries": null,
+    "redis_db_keys": null
+  },
+  "after_resilience": {
+    "total_documents": 984,
+    "by_domain": {
+      "arxiv": 491,
+      "stackoverflow": 118,
+      "github": 375
+    },
+    "embedded": 984,
+    "pending_embedding": 0,
+    "cache": {
+      "available": true,
+      "corpus_version": "1789150241817872001",
+      "exact_entries": 1,
+      "semantic_entries": 1,
+      "redis_db_keys": 3
+    }
+  },
+  "verification": {
+    "http_requests": 22,
+    "cache_tiers": {
+      "miss": 6,
+      "exact": 14,
+      "semantic": 1,
+      "bypass": 1
+    },
+    "generation_log_ids": [
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113
+    ],
+    "generation_logs": 7,
+    "judge_statuses": {
+      "completed": 7
+    },
+    "documents": 984,
+    "existing_experiment_results": 100
+  },
+  "run_details": {
+    "recorded_at": "2026-09-11T18:14:21.970679+00:00",
+    "base_commit": "988cfebc8ad2f24de100a53ebb87151a51117ad0",
+    "app_source_sha256": "d037106e8bd5fcba87df390f3ccf336db5a8f60ea230d0741f9b27a6d05e169c",
+    "python": "3.14.5",
+    "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
+    "redis_server": "7.4.11",
+    "redis_client": "8.1.0",
+    "semantic_threshold": 0.95,
+    "redis_host_port": 6380,
+    "timing": "HTTP wall times from a reused local httpx client; cold miss includes initial model loading. Small functional check, not a load test."
+  }
+}

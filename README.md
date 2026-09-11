@@ -14,7 +14,7 @@ Long content is split into chunks of up to 1,800 characters with overlap. Docume
 
 Embedding is a separate step. `/embed` processes pending chunks in batches of 50 using OpenAI's `text-embedding-3-small` model and stores 1,536-dimensional vectors in pgvector.
 
-Before hybrid retrieval, `gpt-4o-mini` generates a hypothetical technical passage (HyDE) for dense embedding and related terms for BM25. Both enhancements are independently optional; when enabled together, the two calls run concurrently. Reranking still uses the original question. If either enhancement fails, that part falls back to the original query.
+On uncached queries, before hybrid retrieval, `gpt-4o-mini` generates a hypothetical technical passage (HyDE) for dense embedding and related terms for BM25. Both enhancements are independently optional; when enabled together, the two calls run concurrently. Reranking still uses the original question. If either enhancement fails, that part falls back to the original query.
 
 Search combines cosine similarity and BM25 using reciprocal rank fusion. Optional reranking uses `cross-encoder/ms-marco-MiniLM-L-6-v2`. The model downloads on the first reranked search, which can take longer.
 
@@ -34,6 +34,7 @@ Create a `.env` file:
 DATABASE_URL=postgresql://devmind:devmind@localhost:5433/devmind
 OPENAI_API_KEY=your-key
 GITHUB_TOKEN=your-token
+REDIS_URL=redis://localhost:6380/0
 # STACKEXCHANGE_API_KEY is optional
 ```
 
@@ -54,8 +55,9 @@ curl -X POST http://localhost:8001/query \
   -d '{"query": "how does multi-head attention work in transformers"}'
 ```
 
-`POST /query` accepts `query`, `use_hyde`, `use_reranking`, and `use_expansion` (all flags default to `true`). It returns:
+`POST /query` accepts `query`, `use_hyde`, `use_reranking`, `use_expansion`, and `use_cache` (all flags default to `true`). It returns:
 
+- `cache`: `miss`, `exact`, `semantic`, or `bypass`; cache hits also identify the original `cache_hit_query`.
 - `answer`: text with inline `[Source N]` citations.
 - `sources`: numbered sources with document ID, domain, title, URL, and the exact chunk text supplied to the model.
 - `query` and `hyde_query`: the original question and the text used for dense retrieval.
@@ -88,7 +90,7 @@ The endpoint is non-streaming. Invalid requests return 422; model timeouts retur
 | `POST /embed` | Embed pending chunks |
 | `GET /search/bm25` | Keyword search |
 | `GET /search/hybrid` | Combined search; optional `rerank=false`, `hyde=false`, and `expansion=false` |
-| `GET /stats` | Chunk counts by source and embedding status |
+| `GET /stats` | Chunk counts, embedding status, and Redis cache statistics |
 
 `hyde=false` disables the hypothetical passage; set `expansion=false` separately to disable query expansion. `/search/bm25` continues to use the original query. Enhancement calls have a 10-second SDK timeout and no automatic retries.
 
@@ -230,9 +232,44 @@ Equal aggregate recall does not mean retrieval was unchanged: q01 improved from 
 
 These results do not support claiming a general retrieval improvement. The benchmark is corpus-grounded and already has high baseline recall; labels are incomplete and the answer judge needs human calibration. Baseline ran first and full pipeline second, so latency also reflects sequential API conditions. More representative questions, repeated runs, and individual ablations are needed before attributing benefits to HyDE or reranking.
 
+## Redis caching (Day 14)
+
+`/query` checks a case-insensitive exact cache, then a semantic cache at cosine similarity ≥ 0.95, before generating an answer. Both expire after 24 hours. Keys include the corpus version and all three pipeline flags. Cache failures fall back to generation; `use_cache:false` bypasses lookup and writes. Experiments stay uncached.
+
+Docker Compose now starts a dedicated Redis on **localhost:6380**. Ingestion and embedding jobs suspend caching while running and invalidate it afterward, including partial failures. Cache hits retain the original `log_id` and sources, report current request latency, and reload the latest faithfulness score. They do not create a new generation log or judge call.
+
+```bash
+docker compose up -d
+
+# Run twice: miss, then exact hit.
+curl -X POST http://localhost:8001/query \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"how does multi-head attention work"}'
+
+curl http://localhost:8001/stats
+docker compose exec redis redis-cli --scan --pattern 'devmind:cache:*'
+```
+
+Measured locally across 22 HTTP requests, producing seven fresh generation logs:
+
+| Check | Observed result |
+| --- | --- |
+| First cold request | Miss, 14.97s including model initialization |
+| Ten exact repeats | Median **11.19ms**, range 10.23–25.38ms over HTTP |
+| Uppercase and surrounding whitespace | Exact hit, 10.73ms |
+| Same question plus `?` | Semantic hit, similarity 0.9842, **730.23ms** |
+| “explain multi-head attention mechanism” | Similarity 0.9076, below threshold; fresh generation |
+| Same question with all enhancements off | Miss in its separate configuration namespace |
+| Redis stopped | HTTP 200 with a freshly generated answer |
+| Redis restarted | Fresh miss followed by an exact hit in 11.12ms |
+
+Real Redis checks verified expiry of both entry types and version invalidation after `/embed`; no source documents changed. The semantic hit did not meet the brief's approximate 200ms target, and similar wording does not guarantee a hit. A 0.95 similarity score is also not proof that two questions mean the same thing. There are conservative number, literal, and negation guards, but answer reuse remains approximate; case-sensitive code queries can bypass caching.
+
+See the [cache guide](docs/CACHING.md) for implementation details, failure behavior, LFU/LRU and stampede notes, and the [saved live measurements](docs/cache/verification.json). These are functional smoke checks, not throughput or traffic-wide cost benchmarks.
+
 ## Tests
 
-All **60 automated tests** pass. Live verification also checked all 100 result-to-log links, config flags, recall calculations, claim-score fractions, and paired statistics against PostgreSQL. The corpus remained at 984 embedded chunks.
+All **80 automated tests** pass. Live verification also checked all 100 result-to-log links, config flags, recall calculations, claim-score fractions, and paired statistics against PostgreSQL. The corpus remained at 984 embedded chunks.
 
 ```bash
 python -m unittest discover -s tests -v

@@ -1,12 +1,12 @@
 # DEVmind RAG: how the project works
 
-Implementation guide through Day 13 · 9 September 2026
+Implementation guide through Day 14 · 11 September 2026
 
 This document explains the code currently in this repository: what has been built, how the parts connect, why they exist, and what they do not guarantee. Implementation details come from the linked source files. Test results and corpus counts are recorded observations from the previous verification, not measurements taken every time this document is opened.
 
 ## Contents
 
-> Sections 1–16 describe the Day 10 snapshot. Section 17 records Day 11; section 18 records Day 13. These updates supersede earlier statements that citation checks, logging, evaluation, or an expansion toggle are still planned.
+> Sections 1–16 describe the Day 10 snapshot. Section 17 records Day 11, section 18 records Day 13, and section 19 records Day 14. These updates supersede earlier statements that citation checks, logging, evaluation, or an expansion toggle are still planned.
 
 1. [What you have built](#1-what-you-have-built)
 2. [Architecture and technology choices](#2-architecture-and-technology-choices)
@@ -26,6 +26,7 @@ This document explains the code currently in this repository: what has been buil
 16. [Code map and project explanation](#16-code-map-and-project-explanation)
 17. [Day 11 update: citation verification and faithfulness](#17-day-11-update-citation-verification-and-faithfulness)
 18. [Day 13 update: experiments and metrics](#18-day-13-update-experiments-and-metrics)
+19. [Day 14 update: Redis caching](#19-day-14-update-redis-caching)
 
 ## 1. What you have built
 
@@ -817,3 +818,38 @@ Tests cover all enhancement flag combinations, paired matching despite reordered
 
 
 Both live runs completed all 50 questions with no errors. Annotated recall stayed at 0.96 and keyword coverage at 0.90. Judge faithfulness moved from 0.9793 to 1.0000, but its Holm-adjusted p-value was 0.0677. Foreground latency rose from 2.401 to 5.080 seconds on average. This first comparison therefore does not establish a quality gain after accounting for the four tests, and it does show a latency cost. All 60 automated tests pass; all 100 live metric rows were checked against their query logs and paired statistics were independently recalculated from PostgreSQL.
+
+
+## 19. Day 14 update: Redis caching
+
+The API now checks two response caches before running retrieval and generation. The purpose is to avoid repeating model work for questions whose answers can be reused. The [cache guide](CACHING.md) covers commands, serialization, invalidation, limitations, and the recorded timings.
+
+### Exact and semantic lookup
+
+An exact lookup hashes `query.lower().strip()` and retrieves a JSON response from a Redis STRING. Case and surrounding whitespace variations share an entry; punctuation remains significant. A hit makes no embedding, HyDE, expansion, generation, or judge calls.
+
+On an exact miss, an extra `text-embedding-3-small` call embeds the original question for semantic lookup. The cache scans only the current corpus/config namespace and chooses the highest cosine similarity at or above 0.95. It rejects changes in numeric tokens, quoted literals, and the presence of negation as conservative checks. These do not establish semantic equivalence.
+
+Semantic entries are Redis HASH values containing the query, response JSON, and 1,536 float32 values serialized as bytes. Arrays are validated and deserialized with NumPy; no pickle is used. Entries in both tiers expire after 24 hours. Semantic scans fetch hashes in batches and bypass matching if more than 1,000 keys are found in that namespace. A dedicated vector index would be needed for larger caches.
+
+### Configuration, freshness, and failures
+
+Key prefixes include a schema tag, corpus version, and a hash of all three enhancement flags. Baseline answers cannot be reused for a full-pipeline request. `use_cache:false` bypasses both tiers; experiment runs bypass caching by calling the generator directly.
+
+Redis maintains a corpus counter with `INCR`. The three ingestion job wrappers and the embedding wrapper suspend caching during updates and invalidate it when they finish, including after partial failures. If Redis is unavailable, invalidation remains pending until reconnection. An API restart also invalidates existing entries on first cache access. Old generations expire naturally rather than being deleted in a blocking sweep.
+
+The client shares a connection pool and uses short Redis timeouts without retries. Redis failures skip caching, and a one-second cooldown prevents repeated immediate connection attempts. A failed optional semantic embedding also falls back to the regular pipeline. This is built around one API worker; active updates and deferred invalidation are not coordinated across multiple processes.
+
+### Response and logging behavior
+
+`/query` now returns `cache`, `cache_hit_query`, and `cache_similarity`. On a hit, `query` is the current question and `latency_ms` measures the current request. The answer, sources, retrieval scores, HyDE text, and `log_id` belong to the original generation. Its latest faithfulness score is read from PostgreSQL, so a pending score can later appear without rewriting the cached answer.
+
+Cache hits do not create new query logs or run another judge. `/stats.cache` exposes current-generation entry counts, corpus version, availability, and total Redis key count. Hit traffic is therefore not included in the existing query-log latency history. Per-hit metrics and stampede prevention remain future work.
+
+### Running and measured results
+
+Docker Compose adds Redis on localhost:6380 because the machine already has another Redis service on 6379. The cache has a 128 MB limit and uses `volatile-lfu`; the non-expiring version counter is protected from TTL-only eviction. Redis persistence is disabled because cached responses are disposable. PostgreSQL remains durable.
+
+All 80 automated tests pass. Across 22 live requests, ten exact repeats took a median of 11.19ms over HTTP, and a punctuation variant hit the semantic cache in 730.23ms at similarity 0.9842. The longer paraphrase from the brief scored 0.9076 and missed the threshold. Redis outage fallback, restart recovery, actual expiry, configuration isolation, and version invalidation were verified. All seven fresh generations received completed faithfulness evaluations; the corpus and previous experiment results were unchanged.
+
+The exact-hit target was met in this small check. Semantic lookup still pays for a remote embedding and did not meet 200ms here. It can also reuse answers incorrectly when embedding similarity hides an important distinction. These measurements establish working behavior on the tested queries, not general accuracy, throughput, or token-cost savings.
