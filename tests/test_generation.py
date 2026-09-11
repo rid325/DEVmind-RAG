@@ -98,6 +98,9 @@ class GeneratorTests(unittest.TestCase):
 
 class EndpointTests(unittest.TestCase):
     def setUp(self):
+        cache = patch("app.cache.redis_cache.get_redis", return_value=None)
+        cache.start()
+        self.addCleanup(cache.stop)
         self.db = MagicMock()
         self.db.add.side_effect = lambda log: setattr(log, 'id', 123)
         main.app.dependency_overrides[main.get_db] = lambda: self.db

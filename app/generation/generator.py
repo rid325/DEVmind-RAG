@@ -2,6 +2,7 @@ import asyncio
 import logging
 from functools import lru_cache
 from time import perf_counter
+from typing import Literal
 
 import tiktoken
 from pydantic import BaseModel, ConfigDict, Field
@@ -35,6 +36,7 @@ class QueryRequest(BaseModel):
     use_hyde: bool = True
     use_reranking: bool = True
     use_expansion: bool = True
+    use_cache: bool = True
 
 
 class Source(BaseModel):
@@ -53,6 +55,9 @@ class RetrievalScore(BaseModel):
 
 
 class QueryResponse(BaseModel):
+    cache: Literal["miss", "exact", "semantic", "bypass"] = "miss"
+    cache_hit_query: str | None = None
+    cache_similarity: float | None = None
     answer: str
     sources: list[Source]
     query: str

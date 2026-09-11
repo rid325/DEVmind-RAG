@@ -85,6 +85,11 @@ class RetrievalTests(unittest.TestCase):
 
 
 class IngestionTests(unittest.TestCase):
+    def setUp(self):
+        cache = patch("app.cache.redis_cache.get_redis", return_value=None)
+        cache.start()
+        self.addCleanup(cache.stop)
+
     def test_long_text_preserves_tail_and_bounds(self):
         text = 'word ' * 2000 + 'TAIL'
         chunks = split_text(text)

@@ -20,6 +20,8 @@ from app.ingestion.embedder import run_embedding_job
 from app.retrieval.bm25_index import build_index, search
 from app.retrieval.hybrid import search_hybrid
 from app.database import SessionLocal
+from app.cache.redis_cache import cache_stats
+from app.cache.query_cache import lookup_cached_answer, store_cached_answer
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -150,7 +152,8 @@ def stats(db: Session = Depends(get_db)):
             "github": github_count,
         },
         "embedded": embedded,
-        "pending_embedding": total - embedded
+        "pending_embedding": total - embedded,
+        "cache": cache_stats()
     }
 
 
@@ -159,6 +162,9 @@ def stats(db: Session = Depends(get_db)):
 @app.post("/query", response_model=QueryResponse)
 def query_endpoint(request: QueryRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     start = time.perf_counter()
+    cached, scope, query_embedding = lookup_cached_answer(request, db, start)
+    if cached is not None:
+        return cached
     try:
         result = generate_answer(db, request.query, use_hyde=request.use_hyde, use_reranking=request.use_reranking, use_expansion=request.use_expansion)
     except APITimeoutError as exc:
@@ -169,7 +175,9 @@ def query_endpoint(request: QueryRequest, background_tasks: BackgroundTasks, db:
         logging.warning("Query failed: %s", type(exc).__name__)
         raise HTTPException(status_code=502, detail="Could not generate an answer. Please try again.") from exc
 
+    result.cache = "miss" if request.use_cache else "bypass"
     save_query_log(db, request, result, start)
+    store_cached_answer(request, result, scope, query_embedding)
     background_tasks.add_task(run_faithfulness_job, result.log_id)
     # Faithfulness is deliberately null here; the background task updates the log.
     return result

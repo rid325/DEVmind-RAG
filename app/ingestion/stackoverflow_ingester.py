@@ -1,3 +1,4 @@
+from app.cache.version import corpus_update
 import os
 import logging
 import time
@@ -244,6 +245,7 @@ def ingest_stackoverflow_threads(db: Session) -> dict:
     return summary
 
 
+@corpus_update()
 def run_stackoverflow_ingestion() -> dict:
     db = SessionLocal()
     try:

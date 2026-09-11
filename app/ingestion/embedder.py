@@ -1,3 +1,4 @@
+from app.cache.version import corpus_update
 import logging
 
 from sqlalchemy.orm import Session
@@ -37,6 +38,7 @@ def embed_pending_documents(db: Session):
         logging.info("Embedded %d documents", len(pending_docs))
 
 
+@corpus_update()
 def run_embedding_job() -> None:
     db = SessionLocal()
     try:

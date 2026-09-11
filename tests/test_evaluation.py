@@ -91,6 +91,9 @@ def sqlite_jsonb(element, compiler, **kw):
 
 class LogIntegrationTests(unittest.TestCase):
     def setUp(self):
+        cache = patch("app.cache.redis_cache.get_redis", return_value=None)
+        cache.start()
+        self.addCleanup(cache.stop)
         self.engine = create_engine('sqlite://', connect_args={'check_same_thread': False}, poolclass=StaticPool)
         QueryLog.__table__.create(self.engine)
         self.sessions = sessionmaker(bind=self.engine)

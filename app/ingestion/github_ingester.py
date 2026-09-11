@@ -1,3 +1,4 @@
+from app.cache.version import corpus_update
 import os
 import time
 import logging
@@ -121,6 +122,7 @@ def ingest_github_repos(db: Session) -> dict:
         "total_skipped" : total_skipped
     }
 
+@corpus_update()
 def run_github_ingestion() -> dict:
     db = SessionLocal()
     try:

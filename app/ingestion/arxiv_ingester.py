@@ -1,3 +1,4 @@
+from app.cache.version import corpus_update
 import arxiv
 import logging
 from tqdm import tqdm
@@ -115,6 +116,7 @@ def ingest_arxiv_papers(db: Session) -> dict:
     return summary
 
 
+@corpus_update()
 def run_arxiv_ingestion() -> dict:
     db = SessionLocal()
     try:
