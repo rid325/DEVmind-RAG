@@ -1,0 +1,1004 @@
+{
+  "recorded_at": "2026-09-12T11:33:04.885700+00:00",
+  "benchmark": "devmind-heldout-20-v1",
+  "annotation": "274 pooled top-10 relevance grades; assisted draft, all positive labels reviewed and corrected, negatives spot-checked",
+  "pool_coverage": {
+    "baseline_unjudged_top5_documents": 0,
+    "full_pipeline_unjudged_top5_documents": 1,
+    "unjudged_result": "h12 document 372; receives zero gain under frozen-pool scoring"
+  },
+  "comparison": {
+    "experiment_a": {
+      "id": 3,
+      "name": "heldout_baseline",
+      "config": {
+        "use_hyde": false,
+        "use_expansion": false,
+        "use_reranking": false
+      },
+      "status": "complete"
+    },
+    "experiment_b": {
+      "id": 4,
+      "name": "heldout_full_pipeline",
+      "config": {
+        "use_hyde": true,
+        "use_expansion": true,
+        "use_reranking": true
+      },
+      "status": "complete_with_errors"
+    },
+    "benchmark_version": "devmind-heldout-20-v1",
+    "corpus_fingerprint": "99fa4c41b466e996b05fa9fabb36b55e",
+    "metrics": {
+      "retrieval_recall": {
+        "paired_count": 19,
+        "excluded_pairs": 1,
+        "mean_a": 0.8042606516290727,
+        "std_a": 0.2803549146131566,
+        "mean_b": 0.8537593984962406,
+        "std_b": 0.20947467525963204,
+        "p95_a": 1.0,
+        "p95_b": 1.0,
+        "difference_b_minus_a": 0.04949874686716793,
+        "improvement_percent": 6.154565285135558,
+        "p_value": 0.14050196432916662,
+        "significant": false,
+        "b_is_better": true,
+        "note": null,
+        "p_value_holm": 0.4534805034461108,
+        "significant_holm": false
+      },
+      "retrieval_precision": {
+        "paired_count": 19,
+        "excluded_pairs": 1,
+        "mean_a": 0.4,
+        "std_a": 0.22110831935702666,
+        "mean_b": 0.43157894736842106,
+        "std_b": 0.1796683103788366,
+        "p95_a": 0.8199999999999996,
+        "p95_b": 0.8,
+        "difference_b_minus_a": 0.03157894736842104,
+        "improvement_percent": 7.894736842105259,
+        "p_value": 0.26801346725876884,
+        "significant": false,
+        "b_is_better": true,
+        "note": null,
+        "p_value_holm": 0.5360269345175377,
+        "significant_holm": false
+      },
+      "mrr": {
+        "paired_count": 19,
+        "excluded_pairs": 1,
+        "mean_a": 0.9052631578947369,
+        "std_a": 0.2320768172886017,
+        "mean_b": 0.9736842105263158,
+        "std_b": 0.11470786693528089,
+        "p95_a": 1.0,
+        "p95_b": 1.0,
+        "difference_b_minus_a": 0.06842105263157894,
+        "improvement_percent": 7.558139534883719,
+        "p_value": 0.09069610068922215,
+        "significant": false,
+        "b_is_better": true,
+        "note": null,
+        "p_value_holm": 0.4534805034461108,
+        "significant_holm": false
+      },
+      "ndcg": {
+        "paired_count": 19,
+        "excluded_pairs": 1,
+        "mean_a": 0.8177390363741142,
+        "std_a": 0.2842821269859591,
+        "mean_b": 0.8719320047412341,
+        "std_b": 0.1976289782012259,
+        "p95_a": 1.0,
+        "p95_b": 1.0,
+        "difference_b_minus_a": 0.054192968367119954,
+        "improvement_percent": 6.627171500508722,
+        "p_value": 0.09631326897483798,
+        "significant": false,
+        "b_is_better": true,
+        "note": null,
+        "p_value_holm": 0.4534805034461108,
+        "significant_holm": false
+      },
+      "faithfulness_score": {
+        "paired_count": 17,
+        "excluded_pairs": 3,
+        "mean_a": 0.9764705882352941,
+        "std_a": 0.06642111641550713,
+        "mean_b": 0.9882352941176471,
+        "std_b": 0.04850712500726658,
+        "p95_a": 1.0,
+        "p95_b": 1.0,
+        "difference_b_minus_a": 0.01176470588235301,
+        "improvement_percent": 1.204819277108441,
+        "p_value": 0.3321949846529791,
+        "significant": false,
+        "b_is_better": true,
+        "note": null,
+        "p_value_holm": 0.5360269345175377,
+        "significant_holm": false
+      },
+      "answer_relevance": {
+        "paired_count": 0,
+        "excluded_pairs": 20,
+        "mean_a": null,
+        "std_a": null,
+        "mean_b": null,
+        "std_b": null,
+        "p95_a": null,
+        "p95_b": null,
+        "difference_b_minus_a": null,
+        "improvement_percent": null,
+        "p_value": null,
+        "significant": false,
+        "b_is_better": null,
+        "note": "At least two complete pairs are needed.",
+        "p_value_holm": null,
+        "significant_holm": false
+      },
+      "latency_ms": {
+        "paired_count": 19,
+        "excluded_pairs": 1,
+        "mean_a": 3012.2115789473683,
+        "std_a": 1832.643045540945,
+        "mean_b": 6905.551052631579,
+        "std_b": 4466.30398366715,
+        "p95_a": 5998.293999999992,
+        "p95_b": 17305.874999999993,
+        "difference_b_minus_a": 3893.339473684211,
+        "improvement_percent": -129.25185936124572,
+        "p_value": 0.0020447177032203896,
+        "significant": true,
+        "b_is_better": false,
+        "note": null,
+        "p_value_holm": 0.012268306219322338,
+        "significant_holm": true
+      }
+    },
+    "notes": [
+      "Development-set recall uses known supporting sources; held-out recall is bounded by its pooled judgments.",
+      "Precision@5 and MRR treat grades 1 and 2 as relevant; NDCG@5 uses the full 0/1/2 grades.",
+      "Answer relevance is keyword coverage, not an LLM or semantic relevance score.",
+      "Latency excludes faithfulness judging and one-time model loading; lower is better.",
+      "Means and sample standard deviations use the same non-missing pairs per metric.",
+      "P-values are two-sided paired t-tests; quality gates use Holm adjustment across their available metrics.",
+      "This corpus-grounded development benchmark is exploratory, not a held-out evaluation."
+    ],
+    "gates": {
+      "passed": false,
+      "alpha": 0.05,
+      "quality_p_value_adjustment": "Holm across available quality gate metrics",
+      "quality": {
+        "retrieval_recall": {
+          "status": "passed",
+          "passed": true,
+          "difference_b_minus_a": 0.04949874686716793,
+          "adjusted_p_value": 0.4534805034461108
+        },
+        "retrieval_precision": {
+          "status": "passed",
+          "passed": true,
+          "difference_b_minus_a": 0.03157894736842104,
+          "adjusted_p_value": 0.5360269345175377
+        },
+        "mrr": {
+          "status": "passed",
+          "passed": true,
+          "difference_b_minus_a": 0.06842105263157894,
+          "adjusted_p_value": 0.4534805034461108
+        },
+        "ndcg": {
+          "status": "passed",
+          "passed": true,
+          "difference_b_minus_a": 0.054192968367119954,
+          "adjusted_p_value": 0.4534805034461108
+        },
+        "faithfulness_score": {
+          "status": "passed",
+          "passed": true,
+          "difference_b_minus_a": 0.01176470588235301,
+          "adjusted_p_value": 0.5360269345175377
+        }
+      },
+      "latency": {
+        "status": "failed",
+        "passed": false,
+        "p95_b_ms": 17305.874999999993,
+        "ceiling_ms": 8000.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "experiment_id": 3,
+      "name": "heldout_baseline",
+      "status": "complete",
+      "config": {
+        "use_hyde": false,
+        "use_expansion": false,
+        "use_reranking": false
+      },
+      "created_at": "2026-09-12T11:24:32.939475+00:00",
+      "completed_at": "2026-09-12T11:26:40.442290+00:00",
+      "results": [
+        {
+          "benchmark_id": "h01",
+          "query_log_id": 114,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 3289.78,
+          "retrieved_document_ids": [
+            664,
+            669,
+            688,
+            663,
+            704
+          ]
+        },
+        {
+          "benchmark_id": "h02",
+          "query_log_id": 115,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.8,
+          "retrieval_precision": 0.8,
+          "mrr": 1.0,
+          "ndcg": 0.7713398810938545,
+          "faithfulness_score": 1.0,
+          "latency_ms": 1858.6,
+          "retrieved_document_ids": [
+            673,
+            663,
+            704,
+            705,
+            740
+          ]
+        },
+        {
+          "benchmark_id": "h03",
+          "query_log_id": 116,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.7142857142857143,
+          "retrieval_precision": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 3751.64,
+          "retrieved_document_ids": [
+            670,
+            669,
+            691,
+            705,
+            677
+          ]
+        },
+        {
+          "benchmark_id": "h04",
+          "query_log_id": 117,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.25,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 0.21922102252603518,
+          "faithfulness_score": 0.8,
+          "latency_ms": 1492.94,
+          "retrieved_document_ids": [
+            655,
+            683,
+            731,
+            663,
+            699
+          ]
+        },
+        {
+          "benchmark_id": "h05",
+          "query_log_id": 118,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2658.37,
+          "retrieved_document_ids": [
+            766,
+            767,
+            967,
+            776,
+            753
+          ]
+        },
+        {
+          "benchmark_id": "h06",
+          "query_log_id": 119,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 0.9197207891481876,
+          "faithfulness_score": 1.0,
+          "latency_ms": 5599.72,
+          "retrieved_document_ids": [
+            754,
+            583,
+            771,
+            779,
+            601
+          ]
+        },
+        {
+          "benchmark_id": "h07",
+          "query_log_id": 120,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2535.22,
+          "retrieved_document_ids": [
+            556,
+            555,
+            524,
+            566,
+            560
+          ]
+        },
+        {
+          "benchmark_id": "h08",
+          "query_log_id": 121,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 3142.61,
+          "retrieved_document_ids": [
+            554,
+            558,
+            567,
+            839,
+            556
+          ]
+        },
+        {
+          "benchmark_id": "h09",
+          "query_log_id": 122,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2745.33,
+          "retrieved_document_ids": [
+            561,
+            568,
+            559,
+            809,
+            145
+          ]
+        },
+        {
+          "benchmark_id": "h10",
+          "query_log_id": 123,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2649.75,
+          "retrieved_document_ids": [
+            501,
+            495,
+            509,
+            512,
+            531
+          ]
+        },
+        {
+          "benchmark_id": "h11",
+          "query_log_id": 124,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2690.46,
+          "retrieved_document_ids": [
+            562,
+            353,
+            214,
+            675,
+            554
+          ]
+        },
+        {
+          "benchmark_id": "h12",
+          "query_log_id": 125,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 1967.93,
+          "retrieved_document_ids": [
+            526,
+            533,
+            516,
+            554,
+            246
+          ]
+        },
+        {
+          "benchmark_id": "h13",
+          "query_log_id": 126,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.6,
+          "retrieval_precision": 0.6,
+          "mrr": 0.5,
+          "ndcg": 0.47473067492996074,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2152.18,
+          "retrieved_document_ids": [
+            34,
+            15,
+            19,
+            9,
+            36
+          ]
+        },
+        {
+          "benchmark_id": "h14",
+          "query_log_id": 127,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.75,
+          "retrieval_precision": 0.6,
+          "mrr": 1.0,
+          "ndcg": 0.9066151038296889,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2121.47,
+          "retrieved_document_ids": [
+            32,
+            9,
+            11,
+            23,
+            12
+          ]
+        },
+        {
+          "benchmark_id": "h15",
+          "query_log_id": 128,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2029.74,
+          "retrieved_document_ids": [
+            18,
+            13,
+            19,
+            29,
+            47
+          ]
+        },
+        {
+          "benchmark_id": "h16",
+          "query_log_id": 129,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.6666666666666666,
+          "retrieval_precision": 0.4,
+          "mrr": 0.5,
+          "ndcg": 0.5792374606819809,
+          "faithfulness_score": 0.8,
+          "latency_ms": 2088.45,
+          "retrieved_document_ids": [
+            63,
+            15,
+            8,
+            510,
+            82
+          ]
+        },
+        {
+          "benchmark_id": "h17",
+          "query_log_id": 130,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 9585.46,
+          "retrieved_document_ids": [
+            147,
+            127,
+            548,
+            73,
+            562
+          ]
+        },
+        {
+          "benchmark_id": "h18",
+          "query_log_id": 131,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.25,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 0.515157140670655,
+          "faithfulness_score": 1.0,
+          "latency_ms": 1932.6,
+          "retrieved_document_ids": [
+            12,
+            254,
+            279,
+            287,
+            40
+          ]
+        },
+        {
+          "benchmark_id": "h19",
+          "query_log_id": 132,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.6,
+          "mrr": 1.0,
+          "ndcg": 0.9515234565959557,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2161.17,
+          "retrieved_document_ids": [
+            38,
+            130,
+            21,
+            289,
+            14
+          ]
+        },
+        {
+          "benchmark_id": "h20",
+          "query_log_id": 133,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.25,
+          "retrieval_precision": 0.2,
+          "mrr": 0.2,
+          "ndcg": 0.15101961822780524,
+          "faithfulness_score": 1.0,
+          "latency_ms": 2939.77,
+          "retrieved_document_ids": [
+            23,
+            18,
+            195,
+            11,
+            12
+          ]
+        }
+      ]
+    },
+    {
+      "experiment_id": 4,
+      "name": "heldout_full_pipeline",
+      "status": "complete_with_errors",
+      "config": {
+        "use_hyde": true,
+        "use_expansion": true,
+        "use_reranking": true
+      },
+      "created_at": "2026-09-12T11:24:33.499027+00:00",
+      "completed_at": "2026-09-12T11:31:02.074114+00:00",
+      "results": [
+        {
+          "benchmark_id": "h01",
+          "query_log_id": 134,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 20659.14,
+          "retrieved_document_ids": [
+            669,
+            664,
+            663,
+            688,
+            674
+          ]
+        },
+        {
+          "benchmark_id": "h02",
+          "query_log_id": 135,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.6,
+          "retrieval_precision": 0.6,
+          "mrr": 1.0,
+          "ndcg": 0.7116092949143388,
+          "faithfulness_score": 1.0,
+          "latency_ms": 5045.64,
+          "retrieved_document_ids": [
+            673,
+            663,
+            674,
+            159,
+            660
+          ]
+        },
+        {
+          "benchmark_id": "h03",
+          "query_log_id": 136,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.5714285714285714,
+          "retrieval_precision": 0.8,
+          "mrr": 1.0,
+          "ndcg": 0.937708058067494,
+          "faithfulness_score": 1.0,
+          "latency_ms": 5869.49,
+          "retrieved_document_ids": [
+            670,
+            669,
+            663,
+            691,
+            664
+          ]
+        },
+        {
+          "benchmark_id": "h04",
+          "query_log_id": 137,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.5,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 0.5480525563150879,
+          "faithfulness_score": 0.8,
+          "latency_ms": 4028.29,
+          "retrieved_document_ids": [
+            655,
+            699,
+            673,
+            731,
+            700
+          ]
+        },
+        {
+          "benchmark_id": "h05",
+          "query_log_id": 138,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 4697.35,
+          "retrieved_document_ids": [
+            767,
+            766,
+            776,
+            773,
+            779
+          ]
+        },
+        {
+          "benchmark_id": "h06",
+          "query_log_id": 139,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 4596.6,
+          "retrieved_document_ids": [
+            771,
+            754,
+            601,
+            583,
+            770
+          ]
+        },
+        {
+          "benchmark_id": "h07",
+          "query_log_id": 140,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 5131.77,
+          "retrieved_document_ids": [
+            556,
+            555,
+            524,
+            554,
+            566
+          ]
+        },
+        {
+          "benchmark_id": "h08",
+          "query_log_id": 141,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 5344.32,
+          "retrieved_document_ids": [
+            554,
+            558,
+            567,
+            526,
+            269
+          ]
+        },
+        {
+          "benchmark_id": "h09",
+          "query_log_id": 142,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 4948.83,
+          "retrieved_document_ids": [
+            561,
+            559,
+            568,
+            552,
+            818
+          ]
+        },
+        {
+          "benchmark_id": "h10",
+          "query_log_id": 143,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 4787.2,
+          "retrieved_document_ids": [
+            501,
+            495,
+            512,
+            493,
+            494
+          ]
+        },
+        {
+          "benchmark_id": "h11",
+          "query_log_id": 144,
+          "status": "evaluation_failed",
+          "error": "APITimeoutError",
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": null,
+          "latency_ms": 4684.07,
+          "retrieved_document_ids": [
+            562,
+            554,
+            353,
+            548,
+            569
+          ]
+        },
+        {
+          "benchmark_id": "h12",
+          "query_log_id": 145,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 0.9639404333166532,
+          "faithfulness_score": 1.0,
+          "latency_ms": 5254.42,
+          "retrieved_document_ids": [
+            526,
+            530,
+            533,
+            554,
+            372
+          ]
+        },
+        {
+          "benchmark_id": "h13",
+          "query_log_id": 146,
+          "status": "evaluation_failed",
+          "error": "APITimeoutError",
+          "retrieval_recall": 0.8,
+          "retrieval_precision": 0.8,
+          "mrr": 1.0,
+          "ndcg": 0.5795697386205624,
+          "faithfulness_score": null,
+          "latency_ms": 4813.32,
+          "retrieved_document_ids": [
+            15,
+            34,
+            9,
+            19,
+            47
+          ]
+        },
+        {
+          "benchmark_id": "h14",
+          "query_log_id": 147,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.75,
+          "retrieval_precision": 0.6,
+          "mrr": 1.0,
+          "ndcg": 0.9066151038296889,
+          "faithfulness_score": 1.0,
+          "latency_ms": 10076.72,
+          "retrieved_document_ids": [
+            9,
+            32,
+            11,
+            23,
+            12
+          ]
+        },
+        {
+          "benchmark_id": "h15",
+          "query_log_id": 148,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.2,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 16933.29,
+          "retrieved_document_ids": [
+            18,
+            13,
+            19,
+            289,
+            47
+          ]
+        },
+        {
+          "benchmark_id": "h16",
+          "query_log_id": 149,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.6,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "faithfulness_score": 1.0,
+          "latency_ms": 6237.9,
+          "retrieved_document_ids": [
+            15,
+            8,
+            172,
+            63,
+            84
+          ]
+        },
+        {
+          "benchmark_id": "h17",
+          "query_log_id": 150,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 1.0,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 0.9327783893101107,
+          "faithfulness_score": 1.0,
+          "latency_ms": 8209.69,
+          "retrieved_document_ids": [
+            147,
+            73,
+            562,
+            111,
+            127
+          ]
+        },
+        {
+          "benchmark_id": "h18",
+          "query_log_id": 151,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.5,
+          "retrieval_precision": 0.4,
+          "mrr": 1.0,
+          "ndcg": 0.5891125087409779,
+          "faithfulness_score": 1.0,
+          "latency_ms": 4450.16,
+          "retrieved_document_ids": [
+            12,
+            195,
+            280,
+            283,
+            40
+          ]
+        },
+        {
+          "benchmark_id": "h19",
+          "query_log_id": 152,
+          "status": "failed",
+          "error": "APITimeoutError",
+          "retrieval_recall": null,
+          "retrieval_precision": null,
+          "mrr": null,
+          "ndcg": null,
+          "faithfulness_score": null,
+          "latency_ms": null,
+          "retrieved_document_ids": []
+        },
+        {
+          "benchmark_id": "h20",
+          "query_log_id": 153,
+          "status": "complete",
+          "error": null,
+          "retrieval_recall": 0.5,
+          "retrieval_precision": 0.4,
+          "mrr": 0.5,
+          "ndcg": 0.3973220069685352,
+          "faithfulness_score": 1.0,
+          "latency_ms": 5437.27,
+          "retrieved_document_ids": [
+            23,
+            12,
+            22,
+            32,
+            13
+          ]
+        }
+      ]
+    }
+  ],
+  "environment": {
+    "base_commit": "fa2b5f21555a0bac4aea7fed37a275e24ae41481",
+    "python": "3.14.5",
+    "corpus_documents": 984,
+    "run_order": "baseline then full pipeline; sequential in one API worker"
+  }
+}

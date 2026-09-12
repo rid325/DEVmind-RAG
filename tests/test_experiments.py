@@ -1,6 +1,7 @@
 import json
 import math
 import unittest
+from hashlib import sha256
 from types import SimpleNamespace as NS
 from unittest.mock import AsyncMock, patch
 
@@ -14,7 +15,10 @@ from sqlalchemy.pool import StaticPool
 from app import main
 from app.evaluation import experiment_runner as runner
 from app.evaluation.benchmarks import BENCHMARKS
-from app.evaluation.metrics import annotated_recall, keyword_coverage, compare_results
+from app.evaluation.metrics import (annotated_recall, keyword_coverage, compare_results,
+                                    ranking_metrics, evaluate_gates)
+from app.evaluation.heldout_benchmark import HELDOUT_BENCHMARK, QUESTION_SHA256
+from app.evaluation.heldout_questions import HELDOUT_QUESTIONS
 from app.evaluation.comparator import compare_experiments
 from app.generation.generator import QueryResponse
 from app.models import Experiment, ExperimentResult, QueryLog
@@ -34,6 +38,49 @@ def row(key, value, **kwargs):
 
 
 class MetricTests(unittest.TestCase):
+    def test_precision_recall_mrr_and_graded_ndcg(self):
+        scores = ranking_metrics([30, 10, 40, 20, 99], {10: 2, 20: 1, 30: 0, 40: 0})
+        self.assertEqual(scores["retrieval_precision"], .4)
+        self.assertEqual(scores["retrieval_recall"], 1)
+        self.assertEqual(scores["mrr"], .5)
+        expected_dcg = 3 / math.log2(3) + 1 / math.log2(5)
+        expected_idcg = 3 + 1 / math.log2(3)
+        self.assertAlmostEqual(scores["ndcg"], expected_dcg / expected_idcg)
+
+    def test_precision_uses_fixed_k_and_zero_relevant_rank(self):
+        scores = ranking_metrics([1, 2], {1: 0, 2: 0, 3: 1})
+        self.assertEqual(scores["retrieval_precision"], 0)
+        self.assertEqual(scores["retrieval_recall"], 0)
+        self.assertEqual(scores["mrr"], 0)
+        self.assertEqual(scores["ndcg"], 0)
+
+    def test_gates_fail_only_significant_quality_regressions_and_latency_ceiling(self):
+        metric = lambda difference, p, p95=1: {
+            "paired_count": 20, "difference_b_minus_a": difference,
+            "p_value": p, "p95_b": p95,
+        }
+        comparison = {"metrics": {
+            "retrieval_recall": metric(-.2, .001),
+            "retrieval_precision": metric(-.1, .2),
+            "mrr": metric(.1, .001),
+            "ndcg": metric(0, 1),
+            "faithfulness_score": metric(0, 1),
+            "latency_ms": metric(100, .001, 9000),
+        }}
+        gates = evaluate_gates(comparison, latency_p95_ceiling_ms=8000)
+        self.assertFalse(gates["passed"])
+        self.assertEqual(gates["quality"]["retrieval_recall"]["status"], "failed")
+        self.assertEqual(gates["quality"]["retrieval_precision"]["status"], "passed")
+        self.assertEqual(gates["quality"]["mrr"]["status"], "passed")
+        self.assertEqual(gates["latency"]["status"], "failed")
+
+    def test_missing_gate_data_cannot_pass(self):
+        comparison = {"metrics": {name: {"paired_count": 0, "p_value": None,
+                                          "difference_b_minus_a": None, "p95_b": None}
+                                  for name in ("retrieval_recall", "retrieval_precision", "mrr",
+                                               "ndcg", "faithfulness_score", "latency_ms")}}
+        self.assertFalse(evaluate_gates(comparison)["passed"])
+
     def test_keyword_boundaries_alternatives_and_empty_labels(self):
         self.assertEqual(keyword_coverage('An evaluation uses external-knowledge.', ['eval', 'external knowledge', 'uses/use']), 2/3)
         self.assertIsNone(keyword_coverage('answer', []))
@@ -56,7 +103,7 @@ class MetricTests(unittest.TestCase):
         self.assertFalse(results['latency_ms']['b_is_better'])
 
     def test_degenerate_tests_and_json(self):
-        for a, b, expected in [([1, 1], [1, 1], 1), ([0, 0], [1, 1], None), ([1], [2], None), ([], [], None)]:
+        for a, b, expected in [([1, 1], [1, 1], 1), ([0, 0], [1, 1], 0), ([1], [2], None), ([], [], None)]:
             result = compare_results([row(str(i), v) for i, v in enumerate(a)], [row(str(i), v) for i, v in enumerate(b)])
             self.assertEqual(result['retrieval_recall']['p_value'], expected)
             json.dumps(result, allow_nan=False)
@@ -72,6 +119,24 @@ class MetricTests(unittest.TestCase):
         self.assertEqual({b['difficulty'] for b in BENCHMARKS}, {'easy', 'medium', 'hard'})
         self.assertTrue({'arxiv', 'github', 'stackoverflow'} <= {b['domain'] for b in BENCHMARKS})
         self.assertTrue(all(3 <= len(b['expected_keywords']) <= 5 and b['relevant_sources'] for b in BENCHMARKS))
+
+    def test_heldout_benchmark_has_complete_graded_pools(self):
+        self.assertEqual(len(HELDOUT_BENCHMARK), 20)
+        self.assertEqual(len({item["id"] for item in HELDOUT_BENCHMARK}), 20)
+        for item in HELDOUT_BENCHMARK:
+            pooled = set(item["pool"]["baseline"]) | set(item["pool"]["full_pipeline"])
+            labels = {document_id: grade for document_id, grade, _hash in item["judgments"]}
+            self.assertEqual(pooled, set(labels))
+            self.assertTrue(all(grade in {0, 1, 2} for grade in labels.values()))
+            self.assertTrue(any(grade > 0 for grade in labels.values()))
+        question_hash = sha256("\n".join(
+            item["id"] + "\t" + item["query"] for item in HELDOUT_QUESTIONS
+        ).encode()).hexdigest()
+        self.assertEqual(question_hash, QUESTION_SHA256)
+        self.assertEqual(
+            [(item["id"], item["query"]) for item in HELDOUT_BENCHMARK],
+            [(item["id"], item["query"]) for item in HELDOUT_QUESTIONS],
+        )
 
     def test_benchmark_rejects_changed_source(self):
         from unittest.mock import MagicMock
@@ -183,6 +248,8 @@ class ExperimentTests(unittest.TestCase):
         self.assertEqual(self.client.get('/experiments/999').status_code, 404)
         for config in ({}, dict(self.config, typo=True), dict(self.config, use_hyde='false')):
             self.assertEqual(self.client.post('/experiments', json=dict(name='test', config=config)).status_code, 422)
+        self.assertEqual(self.client.post('/experiments', json=dict(
+            name='test', config=self.config, benchmark='unknown')).status_code, 422)
 
     def test_comparator_refuses_incompatible_runs(self):
         a, b = self.create(), self.create()

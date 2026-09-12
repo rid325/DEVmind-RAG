@@ -220,9 +220,11 @@ def start_experiment(request: ExperimentRequest, background_tasks: BackgroundTas
 
 
 @app.get("/experiments/compare")
-def experiment_comparison(exp_a: int, exp_b: int, db: Session = Depends(get_db)):
+def experiment_comparison(exp_a: int, exp_b: int,
+                          latency_p95_ceiling_ms: Annotated[float, Query(gt=0)] = 8000.0,
+                          db: Session = Depends(get_db)):
     try:
-        return compare_experiments(db, exp_a, exp_b)
+        return compare_experiments(db, exp_a, exp_b, latency_p95_ceiling_ms)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

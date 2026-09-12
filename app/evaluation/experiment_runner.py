@@ -6,6 +6,7 @@ from threading import Lock
 from time import perf_counter
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool
+from typing import Literal
 from sqlalchemy import text, update
 from tqdm import tqdm
 
@@ -13,8 +14,10 @@ from app.database import SessionLocal
 from app.models import Document, Experiment, ExperimentResult, QueryLog
 from app.generation.generator import QueryRequest, generate_answer, get_encoding
 from app.evaluation.benchmarks import BENCHMARKS, BENCHMARK_VERSION
+from app.evaluation.heldout_benchmark import HELDOUT_BENCHMARK
+from app.evaluation.heldout_questions import HELDOUT_VERSION
 from app.evaluation.faithfulness import run_faithfulness_job
-from app.evaluation.metrics import annotated_recall, keyword_coverage
+from app.evaluation.metrics import annotated_recall, keyword_coverage, ranking_metrics
 from app.evaluation.query_logging import record_generation_failure, save_query_log
 from app.retrieval.bm25_index import build_index
 from app.retrieval.reranker import get_model
@@ -36,6 +39,13 @@ class ExperimentRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     description: str = Field(default="", max_length=2000)
     config: PipelineConfig
+    benchmark: Literal["development_50", "heldout_20"] = "development_50"
+
+
+def selected_benchmark(name: str):
+    if name == "heldout_20":
+        return HELDOUT_VERSION, HELDOUT_BENCHMARK
+    return BENCHMARK_VERSION, BENCHMARKS
 
 
 def corpus_fingerprint(db) -> str:
@@ -55,22 +65,34 @@ def validate_benchmark(db, benchmarks) -> None:
     if not benchmarks or len({item["id"] for item in benchmarks}) != len(benchmarks):
         raise ValueError("Benchmark must contain unique query IDs")
     for item in benchmarks:
-        if not item["relevant_sources"]:
+        if "judgments" in item:
+            source_labels = [
+                {"document_id": document_id, "content_sha256": content_hash}
+                for document_id, _grade, content_hash in item["judgments"]
+            ]
+            pooled = set(item["pool"]["baseline"]) | set(item["pool"]["full_pipeline"])
+            if pooled != {source["document_id"] for source in source_labels}:
+                raise ValueError(f"Judgment pool mismatch for {item['id']}")
+        else:
+            source_labels = item.get("relevant_sources", [])
+        if not source_labels:
             raise ValueError(f"Missing source labels for {item['id']}")
-        for source in item["relevant_sources"]:
+        for source in source_labels:
             doc = db.get(Document, source["document_id"])
             if (doc is None or doc.embedding is None
                     or sha256(doc.content.encode()).hexdigest() != source["content_sha256"]
-                    or doc.domain != source["domain"] or doc.parent_doc_id != source["parent_doc_id"]
-                    or doc.source_url != source["source_url"]):
+                    or ("domain" in source and doc.domain != source["domain"])
+                    or ("parent_doc_id" in source and doc.parent_doc_id != source["parent_doc_id"])
+                    or ("source_url" in source and doc.source_url != source["source_url"])):
                 raise ValueError(f"Benchmark source mismatch for {item['id']}: document {source['document_id']}. Update labels for this corpus first.")
 
 
 def create_experiment(db, request: ExperimentRequest) -> Experiment:
-    validate_benchmark(db, BENCHMARKS)
+    version, benchmarks = selected_benchmark(request.benchmark)
+    validate_benchmark(db, benchmarks)
     experiment = Experiment(
         name=request.name, description=request.description, config=request.config.model_dump(),
-        benchmark_version=BENCHMARK_VERSION, benchmark_snapshot=BENCHMARKS,
+        benchmark_version=version, benchmark_snapshot=benchmarks,
         corpus_fingerprint=corpus_fingerprint(db), status="queued",
     )
     db.add(experiment)
@@ -121,17 +143,31 @@ def run_experiment(experiment_id: int) -> None:
                     failed = result is None
                     status = "failed" if failed else "evaluation_failed" if log.faithfulness_status == "failed" else "complete"
                     had_errors |= status != "complete"
-                    relevant = [source["document_id"] for source in item["relevant_sources"]]
                     retrieved = result.retrieved_document_ids if result else []
+                    if "judgments" in item:
+                        judgments = {int(document_id): int(grade)
+                                     for document_id, grade, _content_hash in item["judgments"]}
+                        ranking = ranking_metrics(retrieved, judgments) if not failed else {
+                            "retrieval_precision": None, "retrieval_recall": None,
+                            "mrr": None, "ndcg": None,
+                        }
+                        relevant = [document_id for document_id, grade in judgments.items() if grade > 0]
+                    else:
+                        relevant = [source["document_id"] for source in item["relevant_sources"]]
+                        ranking = {"retrieval_precision": None,
+                                   "retrieval_recall": annotated_recall(retrieved, relevant) if not failed else None,
+                                   "mrr": None, "ndcg": None}
                     db.add(ExperimentResult(
                         experiment_id=experiment_id, query_log_id=log_id,
                         benchmark_id=item["id"], query=item["query"], config=config,
-                        retrieval_recall=annotated_recall(retrieved, relevant) if not failed else None,
+                        retrieval_recall=ranking["retrieval_recall"],
                         faithfulness_score=log.faithfulness_score,
-                        answer_relevance=keyword_coverage(result.answer, item["expected_keywords"]) if not failed else None,
+                        answer_relevance=keyword_coverage(result.answer, item.get("expected_keywords", [])) if not failed else None,
                         latency_ms=log.total_latency_ms if not failed else None,
                         status=status, error=log.evaluation_error,
                         metric_details={"relevant_document_ids": relevant, "retrieved_document_ids": retrieved,
+                                        "retrieval_precision": ranking["retrieval_precision"],
+                                        "mrr": ranking["mrr"], "ndcg": ranking["ndcg"],
                                         "faithfulness_status": log.faithfulness_status},
                     ))
                     db.commit()
