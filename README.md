@@ -80,7 +80,7 @@ The endpoint is non-streaming. Invalid requests return 422; model timeouts retur
 | `POST /query` | Answer a question using retrieved sources |
 | `GET /query/{log_id}/faithfulness` | Poll the judge status, score, and claim verdicts |
 | `GET /logs?limit=20` | Read recent query logs and metrics |
-| `POST /experiments` | Queue a 50-question run with an explicit pipeline config |
+| `POST /experiments` | Queue a development-50 or heldout-20 run with an explicit pipeline config |
 | `GET /experiments/{id}` | Read progress and per-question metrics |
 | `GET /experiments/compare?exp_a=1&exp_b=2` | Compare two finished runs using paired statistics |
 | `GET /health` | Basic API health check |
@@ -211,9 +211,39 @@ curl 'http://localhost:8001/experiments/compare?exp_a=1&exp_b=2'
 
 Use a single API worker without `--reload` for experiments. Runs are sequential background tasks inside that process; restarting interrupts them. Leave the corpus unchanged while comparing. The benchmark validates its labelled chunk identities and content hashes, so a different corpus needs reviewed labels before it can run.
 
-The metrics are **annotated chunk recall@5**, claim faithfulness, **keyword coverage** (stored as `answer_relevance`), and foreground latency. Supporting-source labels are incomplete, and keywords are a relevance proxy. Failed or no-claim evaluations stay null and are excluded pairwise, with counts reported. The comparator returns means, sample standard deviations, B−A differences, percentage improvements, two-sided paired t-test p-values, and Holm-adjusted significance across four metrics.
+The original metrics are **annotated chunk recall@5**, claim faithfulness, **keyword coverage** (stored as `answer_relevance`), and foreground latency. The held-out benchmark adds Precision@5, MRR, and NDCG@5. Failed or no-claim evaluations stay null and are excluded pairwise, with counts reported. The comparator returns means, sample standard deviations, B−A differences, percentage improvements, two-sided paired t-test p-values, and Holm-adjusted significance.
 
 A versus B (reranking only) tests the existing reranking path, including its larger candidate pool. A versus C (HyDE only) tests HyDE. B versus D changes both HyDE and expansion, so it does not isolate HyDE. The initial A/D runs assess the combined configuration only.
+
+A separate `heldout_20` benchmark now contains 274 graded relevance judgments
+from pooled baseline/full top-10 results. It reports Precision@5, pooled
+Recall@5, MRR, and graded NDCG@5. The question text was frozen before pooling;
+initial assisted labels were reviewed, but they are not independently
+adjudicated human ground truth. See the experiment guide for exact definitions.
+
+Comparisons also return regression gates. Quality gates fail on a statistically
+significant negative paired delta after Holm correction across recall,
+faithfulness, precision, MRR, and NDCG. The latency gate independently requires
+configuration B p95 foreground latency to stay at or below 8,000ms by default.
+
+The first held-out baseline/full run produced the following real means on 19
+valid retrieval pairs: pooled Recall@5 **0.804 → 0.854**, Precision@5 **0.400 →
+0.432**, MRR **0.905 → 0.974**, and NDCG@5 **0.818 → 0.872**. The result is
+directionally positive across all five quality metrics; with only 20 questions,
+the sample does not yet have enough power to confirm those effects. This is not
+evidence of “no quality difference.” One full-pipeline generation and two
+full-pipeline faithfulness evaluations timed out. Its p95 latency was **17.31s**,
+so the 8s latency gate failed. See the saved
+[held-out comparison](docs/experiments/heldout-baseline-vs-full.json).
+
+Every non-draft pull request runs the same held-out comparison through
+[RAG evaluation](.github/workflows/rag-evaluation.yml). The workflow updates one
+PR comment, uploads the aggregate JSON report, and fails when a quality or
+latency gate fails. It requires repository secrets `OPENAI_API_KEY` and
+`CI_DATABASE_URL`; the latter must point to a dedicated writable CI database
+containing the frozen 984-document corpus. Its role should be able to read the
+`documents` table but write only experiment and query-log records; the workflow
+does not create or migrate the schema.
 
 ### First measured comparison
 
@@ -269,7 +299,7 @@ See the [cache guide](docs/CACHING.md) for implementation details, failure behav
 
 ## Tests
 
-All **80 automated tests** pass. Live verification also checked all 100 result-to-log links, config flags, recall calculations, claim-score fractions, and paired statistics against PostgreSQL. The corpus remained at 984 embedded chunks.
+All **85 automated tests** pass. Earlier live verification also checked all 100 development-set result-to-log links, config flags, recall calculations, claim-score fractions, and paired statistics against PostgreSQL. The corpus remained at 984 embedded chunks.
 
 ```bash
 python -m unittest discover -s tests -v

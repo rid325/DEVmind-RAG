@@ -61,7 +61,7 @@ An unexpected persistence or setup error marks the experiment `failed`; earlier 
 
 The tasks and lock live inside one API process. Restarting it can leave an experiment `running` or `queued`, and no durable queue or automatic resume exists. Start a new experiment after a restart and retain the interrupted run for inspection. Do not run ingestion, embedding, or unrelated query workloads during timing comparisons. The corpus fingerprint covers document content, embeddings, and source metadata and is checked at the beginning and end; it is not database snapshot isolation throughout the run.
 
-## What the four metrics mean
+## What the original metrics mean
 
 | Stored field | Calculation | Interpretation |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ Results are paired by benchmark question ID and exact query text. For each metri
 
 `difference_b_minus_a` is always mean B minus mean A. `improvement_percent` is `(B − A) / abs(A) × 100` for quality scores and `(A − B) / abs(A) × 100` for latency. A zero baseline gives null percentage improvement. A negative number means B is worse under that metric.
 
-The comparator uses a two-sided [SciPy paired t-test](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_rel.html). `significant` means unadjusted p < 0.05, independently of whether B is better. `b_is_better` gives direction. Four metrics create multiple testing opportunities, so `p_value_holm` and `significant_holm` also report a Holm adjustment across the four tests.
+The comparator uses a two-sided [SciPy paired t-test](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_rel.html). `significant` means unadjusted p < 0.05, independently of whether B is better. `b_is_better` gives direction. Multiple reported metrics create multiple testing opportunities, so `p_value_holm` and `significant_holm` report a Holm adjustment across all reported metrics with finite p-values. Regression gates perform their own adjustment over the five quality-gate metrics.
 
 Fewer than two complete pairs have no p-value. Identical scores have p=1; constant nonzero paired differences have no finite t-test and receive a note. No NaN or infinity is returned as JSON. Standard deviation is spread across questions, not a confidence interval for the mean.
 
@@ -136,3 +136,149 @@ Annotated recall was 0.96 for both configurations; keyword coverage was 0.90 for
 The matching retrieval means hide a gain and a loss: q01 retrieved both annotated chunks instead of one; q49 retrieved neither instead of one. Source annotations are incomplete, so read those answers before equating a label miss with an entirely useless response. No labels were changed to improve the measured results.
 
 The baseline/full comparison does not establish which individual component caused these changes. It also runs configurations sequentially, with baseline first. These are measurements on the current development questions and API conditions, not a general speed or quality guarantee.
+
+## Held-out pooled ranking benchmark
+
+The second benchmark is selected with `"benchmark":"heldout_20"`. Its 20
+question texts were frozen before candidate retrieval. For each question, the
+judgment pool is the union of the baseline and full-pipeline top 10, producing
+274 query–chunk labels. Every pooled chunk has a content hash and a grade:
+
+- `0`: irrelevant
+- `1`: useful partial evidence
+- `2`: direct or essential evidence
+
+The first grading pass used `gpt-4o-mini` as an annotation aid. Every positive
+judgment was then reviewed against the passage and permissive adjacent-topic
+labels were corrected; negative labels were spot-checked. This is stronger than
+keyword matching, but it is still a single-reviewer project benchmark rather
+than independently adjudicated human ground truth.
+
+The pool is built from the two configurations being compared. It covers their
+observed candidates without pretending that all 984 corpus chunks were judged.
+For this reason, the metric is called **pooled Recall@5**. A future system that
+retrieves a relevant document outside this fixed pool will receive no credit
+until the pool is expanded and labels are versioned again.
+
+Ranking metrics use the first five retrieved document IDs before context
+deduplication:
+
+| Metric | Definition |
+| --- | --- |
+| Precision@5 | Number of grade-1/2 documents in the first five divided by 5 |
+| Pooled Recall@5 | Distinct grade-1/2 documents in the first five divided by all grade-1/2 documents in the judged pool |
+| MRR | Reciprocal rank of the first grade-1/2 result, or zero when none appears |
+| NDCG@5 | Graded gain `(2^grade - 1) / log2(rank + 1)`, divided by the ideal ordering of pooled grades |
+
+The original 50-question development benchmark remains available as
+`"benchmark":"development_50"`, which is the default for compatibility. It has
+known supporting-source labels but not a pooled 0/1/2 assessment, so
+Precision@5, MRR, and NDCG@5 are null for those old-style runs.
+Comparisons of those runs report the corresponding gates as
+`insufficient_data`; use `heldout_20` for a complete gate decision.
+
+```bash
+curl -X POST http://localhost:8001/experiments \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"heldout_baseline","benchmark":"heldout_20","config":{"use_hyde":false,"use_reranking":false,"use_expansion":false}}'
+```
+
+### Regression gates
+
+The comparison response now includes `gates`. Recall, faithfulness,
+Precision@5, MRR, and NDCG@5 fail only when configuration B has a negative mean
+difference and its paired two-sided t-test remains below alpha 0.05 after Holm
+adjustment across the available quality gate metrics. A significant improvement
+passes; a nonsignificant decline also passes but remains visible in the table.
+Missing or insufficient paired data cannot pass a gate.
+
+Latency uses a separate hard rule because a large slowdown is undesirable even
+when noisy: configuration B's p95 foreground latency must be no more than
+**8,000ms**. It does not use a significance test. Override the ceiling for a
+particular comparison without changing stored results:
+
+```bash
+curl 'http://localhost:8001/experiments/compare?exp_a=3&exp_b=4&latency_p95_ceiling_ms=6000'
+```
+
+The default ceiling is deliberately explicit in the response. It was chosen as
+a practical local-development budget above the earlier full-pipeline mean, not
+as an external service-level objective. Revisit it for deployed hardware and
+real traffic. Gate results are meaningful only when both experiments use the
+same benchmark and corpus, which the comparator already enforces.
+
+### First held-out comparison
+
+Experiments 3 and 4 ran the held-out benchmark sequentially against the same
+984-document corpus. Baseline completed 20/20. The full pipeline had one
+generation timeout and two separate faithfulness-judge timeouts, so ranking and
+latency use 19 pairs and faithfulness uses 17. Failed values remain null.
+
+| Metric | Baseline mean | Full mean | B−A | Paired p-value |
+| --- | ---: | ---: | ---: | ---: |
+| Pooled Recall@5 | 0.8043 | 0.8538 | +0.0495 | 0.1405 |
+| Precision@5 | 0.4000 | 0.4316 | +0.0316 | 0.2680 |
+| MRR | 0.9053 | 0.9737 | +0.0684 | 0.0907 |
+| NDCG@5 | 0.8177 | 0.8719 | +0.0542 | 0.0963 |
+| Faithfulness | 0.9765 | 0.9882 | +0.0118 | 0.3322 |
+| Foreground latency | 3.012s | 6.906s | +3.893s | 0.0020 |
+
+All five quality gates pass because there is no significant negative delta.
+All five metrics moved in a positive direction, which is a useful signal, but
+the 20-question sample does not yet have enough statistical power to confirm
+the effects. “Not significant” here means that this sample did not establish a
+difference; it does not mean that there is no quality difference. The
+overall gate fails because full-pipeline p95 latency was **17.306s**, above the
+8s ceiling. Large generation, query-understanding, and embedding outliers drove
+the tail; this was a sequential local run over remote APIs, not a load test.
+The baseline retrieved no documents outside the judged pool. A fresh HyDE run
+made the full pipeline retrieve one unpooled document for h12; it received zero
+gain because it had no frozen judgment. This is a concrete limitation of pooled
+evaluation when query enhancement is nondeterministic and means the reported
+full-pipeline ranking scores may be a slight underestimate.
+
+All three timeouts occurred in the full pipeline: one during generation and two
+during faithfulness judging. Each failed call went to the same remote model API,
+so the timeouts and latency tail may share an upstream-latency cause, although a
+single run cannot prove that. Foreground latency excludes the judge calls and
+the failed generation has no latency value, which means the 17.306s p95 does not
+fully account for those failures.
+
+The full report, including all per-query metric rows and failure types, is in
+[heldout-baseline-vs-full.json](experiments/heldout-baseline-vs-full.json).
+
+### Pull-request gate
+
+The [GitHub Actions workflow](../.github/workflows/rag-evaluation.yml) runs the
+20-question baseline followed by the full pipeline for every non-draft pull
+request. It uses the same general PR-comment pattern as ReviewBot, but updates a
+single comment identified by an HTML marker so synchronization events do not
+create duplicates. The aggregate JSON and rendered Markdown are also uploaded
+as a workflow artifact. A final workflow step exits nonzero when evaluation
+could not complete or `gates.passed` is false.
+
+Configure these repository Actions secrets:
+
+| Secret | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Query understanding, embeddings, generation, and faithfulness judging |
+| `CI_DATABASE_URL` | Dedicated writable PostgreSQL/pgvector database with the exact frozen 984-document corpus |
+
+The database requirement is deliberate. Held-out labels reference exact
+document IDs and content hashes; an empty PostgreSQL service or freshly scraped
+corpus cannot satisfy them. The CI runner does not create or migrate tables.
+Provision the schema beforehand and give its database role `SELECT` on
+`documents`, read/write access to `experiments`, `experiment_results`, and
+`query_logs`, and access to the sequences used by those result tables. This
+prevents PR evaluation code from modifying the frozen corpus through its normal
+database credentials. Corpus hashes are checked before and after each run.
+
+The workflow uses repository-wide concurrency so two PR evaluations do not
+distort timing on the shared corpus. Its explicit job name is kept stable for
+branch protection, and reports record the PR head SHA rather than GitHub's
+synthetic merge SHA. Configure the
+`RAG evaluation / baseline-vs-full` status check as required in the `main`
+branch ruleset to prevent merging around a failure. Pull requests from forks do
+not receive repository secrets under GitHub's standard `pull_request` security
+model and therefore fail with a configuration message instead of executing
+untrusted fork code with secrets.

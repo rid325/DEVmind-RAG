@@ -806,7 +806,7 @@ Generation failures are recorded and the loop continues. A judge failure retains
 
 Retrieval recall is the fraction of annotated supporting chunks found among the top five results **before** context deduplication. It does not measure how much evidence survives trimming or deduplication. Faithfulness retains Day 11's supported-claim fraction. `answer_relevance` is case-insensitive keyword coverage with explicit alternatives and word boundaries; it is not semantic relevance. Latency measures the foreground pipeline, excluding the judge and initial model loading.
 
-The comparator pairs question IDs and text, discards missing values per metric, and reports both means on the same subset. Standard deviations are sample standard deviations. Quality percentage improvement uses B−A; latency reverses the direction because less time is better. It reports a two-sided paired t-test and a Holm correction for four metrics. Significance is separate from direction: a statistically significant slowdown is still a regression.
+The comparator pairs question IDs and text, discards missing values per metric, and reports both means on the same subset. Standard deviations are sample standard deviations. Quality percentage improvement uses B−A; latency reverses the direction because less time is better. It reports a two-sided paired t-test and a Holm correction across reported metrics with finite p-values. Significance is separate from direction: a statistically significant slowdown is still a regression.
 
 This is a developmental benchmark drawn from this corpus. The labels are incomplete, keywords miss paraphrases, and the same model family writes and judges the answers. The first runs are useful engineering evidence for these questions, not an independent estimate of all technical questions or a guarantee of factual accuracy. Repeated runs, human label review, and held-out questions are the next steps for stronger claims.
 
@@ -817,7 +817,56 @@ The new implementation lives in `app/evaluation/benchmarks.py`, `experiment_runn
 Tests cover all enhancement flag combinations, paired matching despite reordered rows, missing values, zero baselines, degenerate statistics, query-by-query persistence, generation failure continuation, duplicate-run prevention, source mismatches, and API validation. Live comparison results and their scope are recorded in the [README](../README.md#ab-experiments-day-13).
 
 
-Both live runs completed all 50 questions with no errors. Annotated recall stayed at 0.96 and keyword coverage at 0.90. Judge faithfulness moved from 0.9793 to 1.0000, but its Holm-adjusted p-value was 0.0677. Foreground latency rose from 2.401 to 5.080 seconds on average. This first comparison therefore does not establish a quality gain after accounting for the four tests, and it does show a latency cost. All 60 automated tests pass; all 100 live metric rows were checked against their query logs and paired statistics were independently recalculated from PostgreSQL.
+Both Day 13 live runs completed all 50 questions with no errors. Annotated recall stayed at 0.96 and keyword coverage at 0.90. Judge faithfulness moved from 0.9793 to 1.0000, but its Holm-adjusted p-value was 0.0677. Foreground latency rose from 2.401 to 5.080 seconds on average. This first comparison therefore does not establish a quality gain after accounting for the four tests, and it does show a latency cost. At that stage all 60 automated tests passed; all 100 live metric rows were checked against their query logs and paired statistics were independently recalculated from PostgreSQL.
+
+### Held-out ranking labels and gates
+
+The evaluation harness now also offers `heldout_20`: 20 questions frozen before
+retrieval and 274 relevance judgments over the union of baseline and
+full-pipeline top-10 results. Labels use 0 for irrelevant, 1 for useful partial
+evidence, and 2 for direct evidence. An assisted first pass was followed by
+review of every positive judgment and corrections; negative judgments were
+spot-checked. Content hashes prevent the labels from silently moving to changed
+documents.
+
+Precision@5, pooled Recall@5, and MRR treat grades 1 and 2 as relevant. NDCG@5
+uses both grades, so direct evidence earns more gain. Metrics use the ordered top
+five before context deduplication. Recall is bounded by the pooled top-10 union,
+not the entire corpus. The original development benchmark remains the default
+and leaves the three new metrics null because it lacks exhaustive pooled grades.
+
+Comparisons now include explicit gates. A quality gate fails only for a negative
+B-minus-A mean whose paired t-test remains below 0.05 after Holm correction
+across recall, faithfulness, precision, MRR, and NDCG. Insufficient data cannot
+pass. Latency has a direct p95 ceiling of 8,000ms by default and can be changed
+through the comparison endpoint. This local budget is documented policy, not a
+claim about production service levels.
+
+The first held-out baseline/full comparison used 19 valid ranking pairs after
+one full-pipeline generation timeout. Full-pipeline means were higher for pooled
+Recall@5 (0.854 vs 0.804), Precision@5 (0.432 vs 0.400), MRR (0.974 vs 0.905),
+and NDCG@5 (0.872 vs 0.818), but none of those changes had unadjusted p < 0.05.
+Two additional judge timeouts left 17 faithfulness pairs. The quality gates
+therefore found no significant regression, while the overall gate failed:
+full-pipeline p95 latency was 17.306 seconds, exceeding the 8-second ceiling.
+All five quality metrics moved in a positive direction. With 20 questions,
+that pattern is encouraging but the sample cannot confirm the effects
+statistically; “not significant” does not mean “no difference.” All three
+timeouts came from the full pipeline—one generation and two judge calls—and may
+share the same remote-API latency cause. One full-pipeline result was outside
+the frozen judgment pool and therefore received zero relevance gain. This can
+slightly underestimate the full pipeline rather than showing that the chunk was
+irrelevant. The baseline had no unpooled top-five results.
+
+The pull-request workflow now reruns this baseline/full comparison, writes one
+updated summary comment, uploads its JSON report, and exits nonzero when the
+gate fails. It uses `OPENAI_API_KEY` and a dedicated `CI_DATABASE_URL` containing
+the exact labelled corpus. Branch protection must require the
+`RAG evaluation / baseline-vs-full` check for a failed job to block merging.
+The CI runner does not call `create_all`: its database must be provisioned in
+advance, and its role should have read-only access to `documents` plus write
+access to experiment and query-log tables. Reports identify the tested PR head
+SHA, and the job name is explicit so the required-check name stays stable.
 
 
 ## 19. Day 14 update: Redis caching
@@ -850,6 +899,6 @@ Cache hits do not create new query logs or run another judge. `/stats.cache` exp
 
 Docker Compose adds Redis on localhost:6380 because the machine already has another Redis service on 6379. The cache has a 128 MB limit and uses `volatile-lfu`; the non-expiring version counter is protected from TTL-only eviction. Redis persistence is disabled because cached responses are disposable. PostgreSQL remains durable.
 
-All 80 automated tests pass. Across 22 live requests, ten exact repeats took a median of 11.19ms over HTTP, and a punctuation variant hit the semantic cache in 730.23ms at similarity 0.9842. The longer paraphrase from the brief scored 0.9076 and missed the threshold. Redis outage fallback, restart recovery, actual expiry, configuration isolation, and version invalidation were verified. All seven fresh generations received completed faithfulness evaluations; the corpus and previous experiment results were unchanged.
+At Day 14, all 80 automated tests passed. Across 22 live requests, ten exact repeats took a median of 11.19ms over HTTP, and a punctuation variant hit the semantic cache in 730.23ms at similarity 0.9842. The longer paraphrase from the brief scored 0.9076 and missed the threshold. Redis outage fallback, restart recovery, actual expiry, configuration isolation, and version invalidation were verified. All seven fresh generations received completed faithfulness evaluations; the corpus and previous experiment results were unchanged.
 
 The exact-hit target was met in this small check. Semantic lookup still pays for a remote embedding and did not meet 200ms here. It can also reuse answers incorrectly when embedding similarity hides an important distinction. These measurements establish working behavior on the tested queries, not general accuracy, throughput, or token-cost savings.
