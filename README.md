@@ -243,7 +243,9 @@ latency gate fails. It requires repository secrets `OPENAI_API_KEY` and
 `CI_DATABASE_URL`; the latter must point to a dedicated writable CI database
 containing the frozen 984-document corpus. Its role should be able to read the
 `documents` table but write only experiment and query-log records; the workflow
-does not create or migrate the schema.
+does not create or migrate the schema. See
+[Creating `CI_DATABASE_URL`](docs/EXPERIMENTS.md#creating-ci_database_url) for
+the dump/restore commands and preflight check.
 
 ### First measured comparison
 

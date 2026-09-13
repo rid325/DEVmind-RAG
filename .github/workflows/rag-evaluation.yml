@@ -35,11 +35,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Verify frozen CI database
+        run: python -m scripts.check_ci_database
+
       - name: Run held-out baseline versus full evaluation
         id: evaluation
         continue-on-error: true
         run: >-
-          python scripts/run_pr_evaluation.py
+          python -m scripts.run_pr_evaluation
           --json rag-evaluation.json
           --markdown rag-evaluation.md
           --latency-ceiling-ms 8000

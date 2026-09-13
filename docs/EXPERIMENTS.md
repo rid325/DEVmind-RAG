@@ -282,3 +282,49 @@ branch ruleset to prevent merging around a failure. Pull requests from forks do
 not receive repository secrets under GitHub's standard `pull_request` security
 model and therefore fail with a configuration message instead of executing
 untrusted fork code with secrets.
+
+#### Creating `CI_DATABASE_URL`
+
+`CI_DATABASE_URL` is the PostgreSQL connection string for a hosted database
+that GitHub-hosted runners can reach. It looks like:
+
+```text
+postgresql://devmind_ci:PASSWORD@HOST:5432/DATABASE?sslmode=require
+```
+
+Create a PostgreSQL database with pgvector through Neon, Supabase, or another
+managed PostgreSQL service, then copy its connection string from the provider
+dashboard. A local `localhost:5433` URL will not work from a GitHub-hosted
+runner. Copy the existing frozen database so document IDs, content, and vectors
+remain unchanged:
+
+```bash
+pg_dump "$DATABASE_URL" --format=custom --no-owner --no-acl --file=/tmp/devmind-ci.dump
+pg_restore --dbname="$CI_DATABASE_ADMIN_URL" --no-owner --no-acl /tmp/devmind-ci.dump
+```
+
+Use the provider's administrator URL only for setup. Create a separate CI login
+with `SELECT` on `documents`, `SELECT/INSERT/UPDATE` on `query_logs`,
+`experiments`, and `experiment_results`, and usage on their ID sequences. Put
+that restricted login's connection string in the GitHub Actions secret named
+`CI_DATABASE_URL`. Never commit either URL.
+
+Verify the restricted URL locally before adding the secret:
+
+```bash
+DATABASE_URL="$CI_DATABASE_URL" python -m scripts.check_ci_database
+```
+
+The same preflight runs in Actions before any model request. It checks table
+permissions and validates every held-out document ID and content hash, giving a
+short error instead of failing halfway through an evaluation.
+
+#### Gemini key limitation
+
+Google provides an OpenAI-compatible endpoint for Gemini chat and embeddings,
+but changing only `OPENAI_API_KEY` to `GEMINI_API_KEY` is not valid for this
+benchmark. The frozen corpus contains OpenAI `text-embedding-3-small` vectors;
+Gemini embeddings occupy a different vector space even when configured to the
+same 1,536 dimensions. A complete Gemini migration must re-embed every document,
+rebuild and review the top-10 judgment pool, version the benchmark, and record a
+new baseline. Until then, CI needs the provider that created the frozen vectors.
