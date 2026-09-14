@@ -12,6 +12,7 @@ REQUIRED_PRIVILEGES = {
     "experiments": ("SELECT", "INSERT", "UPDATE"),
     "experiment_results": ("SELECT", "INSERT", "UPDATE"),
 }
+WRITE_TABLES = ("query_logs", "experiments", "experiment_results")
 
 
 def main() -> None:
@@ -25,6 +26,19 @@ def main() -> None:
                 ).scalar_one()
                 if not allowed:
                     missing.append(f"{privilege} on {table}")
+        if missing:
+            raise RuntimeError("CI database role is missing: " + ", ".join(missing))
+
+        for table in WRITE_TABLES:
+            sequence = db.execute(
+                text("SELECT pg_get_serial_sequence(:table, 'id')"),
+                {"table": table},
+            ).scalar_one()
+            if sequence and not db.execute(
+                text("SELECT has_sequence_privilege(current_user, :sequence, 'USAGE')"),
+                {"sequence": sequence},
+            ).scalar_one():
+                missing.append(f"USAGE on {sequence}")
         if missing:
             raise RuntimeError("CI database role is missing: " + ", ".join(missing))
 
