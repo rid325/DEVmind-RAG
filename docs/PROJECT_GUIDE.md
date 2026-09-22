@@ -898,7 +898,7 @@ Cache hits do not create new query logs or run another judge. `/stats.cache` exp
 ### Running and measured results
 
 Docker Compose adds Redis on localhost:6380 because the machine already has another Redis service on 6379. The cache has a 128 MB limit and uses `volatile-lfu`; the non-expiring version counter is protected from TTL-only eviction. Redis persistence is disabled because cached responses are disposable. PostgreSQL remains durable.
-
+ 
 At Day 14, all 80 automated tests passed. Across 22 live requests, ten exact repeats took a median of 11.19ms over HTTP, and a punctuation variant hit the semantic cache in 730.23ms at similarity 0.9842. The longer paraphrase from the brief scored 0.9076 and missed the threshold. Redis outage fallback, restart recovery, actual expiry, configuration isolation, and version invalidation were verified. All seven fresh generations received completed faithfulness evaluations; the corpus and previous experiment results were unchanged.
 
 The exact-hit target was met in this small check. Semantic lookup still pays for a remote embedding and did not meet 200ms here. It can also reuse answers incorrectly when embedding similarity hides an important distinction. These measurements establish working behavior on the tested queries, not general accuracy, throughput, or token-cost savings.
