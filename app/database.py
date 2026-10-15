@@ -6,8 +6,12 @@ import os
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://devmind:devmind@localhost:5433/devmind")
+# Some hosting providers still emit the legacy scheme, which SQLAlchemy 2 does
+# not recognise as the PostgreSQL dialect name.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql://" + DATABASE_URL.removeprefix("postgres://")
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(bind=engine)
 

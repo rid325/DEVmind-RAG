@@ -47,6 +47,39 @@ uvicorn app.main:app --reload --port 8001
 
 Open http://localhost:8001/docs to try the API. Trigger ingestion, wait for it to finish in the logs, then call `/embed` before using hybrid search. BM25 works without embeddings.
 
+## Deploy
+
+The included `Dockerfile` runs the API as a non-root user with one Uvicorn
+worker. It honours the platform-provided `PORT`; `railway.toml` configures
+Railway to build that image and check `/health`.
+
+Provision these dependencies before deploying:
+
+- PostgreSQL 16 with the `vector` extension and a persistent volume or managed
+  database. Set `DATABASE_URL` to its private connection URL. Legacy
+  `postgres://` URLs are accepted and normalized automatically.
+- A pre-populated corpus if the deployment is meant to be a useful demo. The
+  repository does not contain the local 984-document database; a fresh database
+  starts empty and must be ingested and embedded.
+- `OPENAI_API_KEY` for embedding, enhanced retrieval, answer generation, and
+  evaluation.
+- Redis and `REDIS_URL` for response caching. Redis is optional; requests bypass
+  the cache when it is unavailable.
+- `GITHUB_TOKEN` only when running GitHub ingestion, and optionally
+  `STACKEXCHANGE_API_KEY` for the Stack Exchange quota.
+
+Use a single application replica. The in-memory BM25 index and background jobs
+are process-local, so multiple replicas can disagree and restarts interrupt
+ingestion, embedding, and experiment jobs. Allow several minutes for the first
+startup and first reranked query while dependencies and the cross-encoder load.
+
+Before exposing the API publicly, put authentication or a private network in
+front of the administrative endpoints: `/ingest/*`, `/embed`, `/logs`, and
+`/experiments*`. They can mutate the corpus, consume paid API quota, or expose
+stored query text. The application does not currently implement user accounts
+or rate limiting, so a production deployment should also enforce request limits
+at the proxy/platform layer.
+
 ## Ask a question
 
 ```bash
