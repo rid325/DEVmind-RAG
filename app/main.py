@@ -1,10 +1,20 @@
+import json
 import logging
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 from fastapi import FastAPI, Depends, BackgroundTasks, Query, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from openai import APIError, APITimeoutError
-from app.generation.generator import GenerationError, QueryRequest, QueryResponse, generate_answer
+from app.generation.generator import (
+    GenerationError,
+    QueryRequest,
+    QueryResponse,
+    generate_answer,
+    generate_answer_stream,
+)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import engine, Base, get_db
@@ -41,6 +51,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DevMind RAG", lifespan=lifespan)
+STATIC_DIR = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 def validate_query(query: Annotated[str, Query(min_length=1, max_length=2000)]) -> str:
@@ -52,6 +64,11 @@ def validate_query(query: Annotated[str, Query(min_length=1, max_length=2000)]) 
 
 SearchQuery = Annotated[str, Depends(validate_query)]
 ResultCount = Annotated[int, Query(ge=1, le=100)]
+
+
+@app.get("/", include_in_schema=False)
+def demo():
+    return FileResponse(STATIC_DIR / "index.html")
 
 @app.get("/health")
 def health():
@@ -157,6 +174,52 @@ def stats(db: Session = Depends(get_db)):
     }
 
 
+def percentile(values: list[float], fraction: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * fraction
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    weight = position - lower
+    return round(ordered[lower] * (1 - weight) + ordered[upper] * weight, 2)
+
+
+@app.get("/metrics")
+def metrics(db: Session = Depends(get_db)):
+    """Aggregate recent query performance without exposing query text."""
+    logs = (
+        db.query(QueryLog)
+        .filter(QueryLog.answer.is_not(None))
+        .order_by(QueryLog.created_at.desc(), QueryLog.id.desc())
+        .limit(500)
+        .all()
+    )
+    values: dict[str, list[float]] = {"total": []}
+    cacheable = 0
+    for log in logs:
+        if log.total_latency_ms is not None:
+            values["total"].append(float(log.total_latency_ms))
+        for stage, latency in (log.stage_latency_ms or {}).items():
+            if isinstance(latency, (int, float)):
+                values.setdefault(stage, []).append(float(latency))
+        if log.answer:
+            cacheable += 1
+    return {
+        "window": "latest 500 completed queries",
+        "sample_size": len(logs),
+        "answer_count": cacheable,
+        "latency_ms": {
+            stage: {
+                "samples": len(stage_values),
+                "p50": percentile(stage_values, 0.50),
+                "p95": percentile(stage_values, 0.95),
+            }
+            for stage, stage_values in sorted(values.items())
+        },
+    }
+
+
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -181,6 +244,60 @@ def query_endpoint(request: QueryRequest, background_tasks: BackgroundTasks, db:
     background_tasks.add_task(run_faithfulness_job, result.log_id)
     # Faithfulness is deliberately null here; the background task updates the log.
     return result
+
+
+def sse(event: str, payload: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+@app.post("/query/stream")
+def stream_query_endpoint(request: QueryRequest, background_tasks: BackgroundTasks,
+                          db: Session = Depends(get_db)):
+    """Stream answer tokens as SSE, then send the normal response as `complete`."""
+    start = time.perf_counter()
+    cached, scope, query_embedding = lookup_cached_answer(request, db, start)
+
+    def events():
+        if cached is not None:
+            yield sse("token", {"text": cached.answer})
+            yield sse("complete", cached.model_dump(mode="json"))
+            return
+
+        answer_stream = generate_answer_stream(
+            db,
+            request.query,
+            use_hyde=request.use_hyde,
+            use_reranking=request.use_reranking,
+            use_expansion=request.use_expansion,
+        )
+        try:
+            while True:
+                try:
+                    token = next(answer_stream)
+                except StopIteration as finished:
+                    result = finished.value
+                    break
+                yield sse("token", {"text": token})
+
+            result.cache = "miss" if request.use_cache else "bypass"
+            save_query_log(db, request, result, start)
+            store_cached_answer(request, result, scope, query_embedding)
+            background_tasks.add_task(run_faithfulness_job, result.log_id)
+            yield sse("complete", result.model_dump(mode="json"))
+        except APITimeoutError as exc:
+            record_generation_failure(db, request, start, exc)
+            yield sse("error", {"message": "The model request timed out. Please try again."})
+        except (APIError, GenerationError) as exc:
+            record_generation_failure(db, request, start, exc)
+            logging.warning("Streaming query failed: %s", type(exc).__name__)
+            yield sse("error", {"message": "Could not generate an answer. Please try again."})
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        background=background_tasks,
+    )
 
 
 @app.get("/query/{log_id}/faithfulness")

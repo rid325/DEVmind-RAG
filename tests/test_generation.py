@@ -73,6 +73,7 @@ class GeneratorTests(unittest.TestCase):
         self.assertNotIn('retrieved_document_ids', response.model_dump())
         self.assertEqual(response.retrieval_scores[0].reranker_score, 4.5)
         self.assertGreaterEqual(response.latency_ms, 0)
+        self.assertIn('generation', response.model_dump()['stage_latency_ms'])
 
     def test_no_context_skips_generation(self):
         self.search.return_value = []
@@ -94,6 +95,24 @@ class GeneratorTests(unittest.TestCase):
             self.create.return_value = NS(choices=[NS(finish_reason=finish, message=NS(content=content, refusal=refusal))])
             with self.subTest(content=content), self.assertRaises(g.GenerationError):
                 g.generate_answer(MagicMock(), 'question')
+
+    def test_streaming_yields_tokens_and_returns_complete_response(self):
+        self.create.return_value = iter([
+            NS(choices=[NS(finish_reason=None, delta=NS(content='A supported '))]),
+            NS(choices=[NS(finish_reason='stop', delta=NS(content='fact. [Source 1]'))]),
+        ])
+        stream = g.generate_answer_stream(MagicMock(), 'question')
+        tokens = []
+        while True:
+            try:
+                tokens.append(next(stream))
+            except StopIteration as finished:
+                response = finished.value
+                break
+        self.assertEqual(tokens, ['A supported ', 'fact. [Source 1]'])
+        self.assertEqual(response.answer, 'A supported fact. [Source 1]')
+        self.assertTrue(self.create.call_args.kwargs['stream'])
+        self.assertNotIn('response_format', self.create.call_args.kwargs)
 
 
 class EndpointTests(unittest.TestCase):
@@ -134,3 +153,38 @@ class EndpointTests(unittest.TestCase):
                 response = self.client.post('/query', json={'query': 'question'})
             self.assertEqual(response.status_code, status)
             self.assertNotIn('internal detail', response.text)
+
+    def test_streaming_endpoint_emits_tokens_then_complete_payload(self):
+        output = g.QueryResponse(
+            answer='A supported fact.', sources=[], query='question', hyde_query='question',
+            retrieval_scores=[], latency_ms=12, stage_latency_ms={'generation': 8},
+        )
+
+        def generate(*args, **kwargs):
+            yield 'A supported '
+            yield 'fact.'
+            return output
+
+        def save(db, request, result, start):
+            result.log_id = 123
+            result.citation_valid = True
+            return 123
+
+        with patch.object(main, 'generate_answer_stream', side_effect=generate), \
+             patch.object(main, 'save_query_log', side_effect=save), \
+             patch.object(main, 'store_cached_answer'), \
+             patch.object(main, 'run_faithfulness_job') as judge:
+            response = self.client.post('/query/stream', json={'query': 'question', 'use_cache': False})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('event: token\ndata: {"text": "A supported "}', response.text)
+        self.assertIn('event: complete', response.text)
+        self.assertIn('"stage_latency_ms": {"generation": 8.0}', response.text)
+        judge.assert_called_once_with(123)
+
+    def test_demo_and_percentile_helper(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Technical research, with receipts.', response.text)
+        self.assertEqual(main.percentile([10, 20, 30, 40], .5), 25)
+        self.assertEqual(main.percentile([10, 20, 30, 40], .95), 38.5)
+        self.assertIsNone(main.percentile([], .95))

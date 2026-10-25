@@ -1,10 +1,30 @@
-# DEVmind RAG
+# DevMind RAG
 
-A FastAPI backend for searching arXiv abstracts, GitHub READMEs, and Stack Overflow answers. It retrieves relevant chunks and generates answers with inline source citations.
+A measured, multi-domain RAG system for searching arXiv abstracts, GitHub
+READMEs, and Stack Overflow answers. DevMind combines dense and sparse
+retrieval, reranks the candidates, streams a grounded answer with inspectable
+citations, and evaluates the result in the background.
+
+The root URL is a recruiter-facing chat demo. The same service exposes a stable
+JSON API for experiments, aggregate p50/p95 latency metrics, and a CI quality
+gate backed by a frozen held-out corpus.
 
 For a full explanation of the implementation and design choices, read the [project guide](docs/PROJECT_GUIDE.md).
 
 ## How it works
+
+```mermaid
+flowchart LR
+    Q[Question] --> U[HyDE + query expansion]
+    U --> D[pgvector dense search]
+    U --> B[BM25 sparse search]
+    D --> R[RRF fusion + reranker]
+    B --> R
+    R --> G[Grounded generation]
+    G --> A[Streamed answer + source cards]
+    G --> V[Citation + faithfulness checks]
+    V --> L[(Query metrics)]
+```
 
 - **arXiv:** searches 10 configured topics and stores abstracts with paper metadata. It doesn't download PDFs.
 - **GitHub:** fetches READMEs from 20 configured repositories and splits them by heading.
@@ -45,7 +65,9 @@ docker compose up -d
 uvicorn app.main:app --reload --port 8001
 ```
 
-Open http://localhost:8001/docs to try the API. Trigger ingestion, wait for it to finish in the logs, then call `/embed` before using hybrid search. BM25 works without embeddings.
+Open http://localhost:8001 for the chat demo or http://localhost:8001/docs
+for the API. Trigger ingestion, wait for it to finish in the logs, then call
+`/embed` before using hybrid search. BM25 works without embeddings.
 
 ## Deploy
 
@@ -99,19 +121,29 @@ curl -X POST http://localhost:8001/query \
 - `log_id`: saved query ID for polling evaluation results.
 - `citation_valid`: whether all recognised source references resolve and no malformed source markers were found.
 - `faithfulness_score`: initially `null`; computed after the answer is sent.
+- `stage_latency_ms`: measured query-understanding, embedding, retrieval,
+  reranking, context, generation, citation, and logging timings when available.
 
 The top five results are ordered by score and deduplicated by source domain and parent document, so the final context may contain fewer than five sources. Chunks longer than 800 tokens are trimmed to 600. All context sources are returned, including those the answer doesn't cite.
 
 Generation uses `gpt-4o-mini` with a strict JSON schema for the answer. Source metadata comes from the database, not the model. The prompt requires answers to stay within the context and acknowledge missing information. With no retrieved context, the endpoint skips generation and returns an insufficient-information answer.
 
-The endpoint is non-streaming. Invalid requests return 422; model timeouts return 504; other model API errors or malformed/refused answers return 502. Logs include query-understanding, embedding, retrieval, reranking, context assembly, generation, and total timing. First-use model loading can make the first request slower.
+The stable `/query` endpoint is non-streaming. The browser demo uses
+`/query/stream`, which emits Server-Sent Events named `token`, then `complete`
+with the same response model. Invalid non-streaming requests return 422; model
+timeouts return 504; other model API errors or malformed/refused answers return
+502. Streaming failures use a generic `error` event because headers have already
+been sent. First-use model loading can make the first request slower.
 
 ## Endpoints
 
 | Endpoint | Purpose |
 | --- | --- |
+| `GET /` | Recruiter-facing streamed chat demo |
 | `POST /query` | Answer a question using retrieved sources |
+| `POST /query/stream` | Stream answer tokens as Server-Sent Events |
 | `GET /query/{log_id}/faithfulness` | Poll the judge status, score, and claim verdicts |
+| `GET /metrics` | Aggregate p50/p95 latency by pipeline stage; never returns query text |
 | `GET /logs?limit=20` | Read recent query logs and metrics |
 | `POST /experiments` | Queue a development-50 or heldout-20 run with an explicit pipeline config |
 | `GET /experiments/{id}` | Read progress and per-question metrics |
@@ -334,7 +366,7 @@ See the [cache guide](docs/CACHING.md) for implementation details, failure behav
 
 ## Tests
 
-All **85 automated tests** pass. Earlier live verification also checked all 100 development-set result-to-log links, config flags, recall calculations, claim-score fractions, and paired statistics against PostgreSQL. The corpus remained at 984 embedded chunks.
+All **88 automated tests** pass. Earlier live verification also checked all 100 development-set result-to-log links, config flags, recall calculations, claim-score fractions, and paired statistics against PostgreSQL. The corpus remained at 984 embedded chunks.
 
 ```bash
 python -m unittest discover -s tests -v
