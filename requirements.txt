@@ -32,9 +32,9 @@ uvicorn==0.49.0
 uvloop==0.22.1
 watchfiles==1.2.0
 websockets==16.0
-openai
-rank_bm25
-sentence_transformers
-tiktoken
-scipy
+openai==3.37.0
+rank_bm25==0.2.2
+sentence_transformers==6.2.0
+tiktoken==0.14.0
+scipy==1.18.1
 redis==8.1.0

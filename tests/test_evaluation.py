@@ -130,6 +130,7 @@ class LogIntegrationTests(unittest.TestCase):
         data = response.json()
         self.assertIsNone(data['faithfulness_score'])
         self.assertTrue(data['citation_valid'])
+        self.assertIn('citation_verification', data['stage_latency_ms'])
         log_id = data['log_id']
         poll = self.client.get(f'/query/{log_id}/faithfulness').json()
         self.assertEqual(poll['status'], 'completed')
@@ -144,6 +145,10 @@ class LogIntegrationTests(unittest.TestCase):
             self.assertIn('citation_verification', log.stage_latency_ms)
         logs = self.client.get('/logs?limit=1').json()['logs']
         self.assertEqual(logs[0]['id'], log_id)
+        metrics = self.client.get('/metrics').json()
+        self.assertEqual(metrics['sample_size'], 1)
+        self.assertEqual(metrics['latency_ms']['total']['samples'], 1)
+        self.assertIn('citation_verification', metrics['latency_ms'])
 
     def test_pending_and_failed_are_not_low_scores(self):
         with patch.object(main, 'generate_answer', return_value=self.output), \

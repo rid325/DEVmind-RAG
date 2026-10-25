@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DevMind: a grounded, evaluated RAG system for technical research.">
+  <title>DevMind — Technical RAG</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="DevMind home">
+        <span class="brand-mark">D</span>
+        <span>DevMind</span>
+      </a>
+      <nav aria-label="Project links">
+        <a href="/docs">API docs</a>
+        <a href="/metrics">Metrics</a>
+        <a href="https://github.com/rid325/DEVmind-RAG" rel="noreferrer">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow"><span class="status-dot"></span> Multi-domain technical search</p>
+          <h1>Answers grounded in<br><span>sources you can inspect.</span></h1>
+          <p class="lede">Hybrid dense + BM25 retrieval, cross-encoder reranking, inline citations, and a background faithfulness check—across arXiv, Stack Overflow, and GitHub.</p>
+        </div>
+        <aside class="system-card" aria-label="Pipeline summary">
+          <div class="system-card__head"><span>Query pipeline</span><span class="live-pill">LIVE</span></div>
+          <ol>
+            <li><span>01</span> Query expansion + HyDE</li>
+            <li><span>02</span> Dense + sparse retrieval</li>
+            <li><span>03</span> RRF + cross-encoder rerank</li>
+            <li><span>04</span> Grounded generation</li>
+            <li><span>05</span> Citation + faithfulness check</li>
+          </ol>
+        </aside>
+      </section>
+
+      <section class="workspace" aria-labelledby="ask-title">
+        <div class="workspace__main">
+          <div class="section-heading">
+            <div>
+              <p class="kicker">Ask the corpus</p>
+              <h2 id="ask-title">Technical research, with receipts.</h2>
+            </div>
+            <span id="request-status" class="request-status">Ready</span>
+          </div>
+
+          <form id="query-form">
+            <label class="sr-only" for="query">Question</label>
+            <textarea id="query" name="query" maxlength="2000" rows="4" placeholder="How does multi-head attention work?" required></textarea>
+            <div class="composer-footer">
+              <div class="toggles" aria-label="Retrieval options">
+                <label><input id="hyde" type="checkbox" checked> HyDE</label>
+                <label><input id="reranking" type="checkbox" checked> Rerank</label>
+                <label><input id="expansion" type="checkbox" checked> Expand</label>
+              </div>
+              <button id="submit" type="submit"><span>Ask DevMind</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </form>
+
+          <div class="suggestions" aria-label="Example questions">
+            <span>Try</span>
+            <button type="button">How do I create a vector index in pgvector?</button>
+            <button type="button">Why do transformers struggle with long sequences?</button>
+            <button type="button">How do I fix CUDA out of memory in PyTorch?</button>
+          </div>
+
+          <article id="answer-panel" class="answer-panel" hidden aria-live="polite">
+            <div class="answer-panel__head">
+              <span class="answer-label">Answer</span>
+              <div id="answer-meta" class="answer-meta"></div>
+            </div>
+            <div id="answer" class="answer"></div>
+            <div id="sources" class="sources"></div>
+          </article>
+        </div>
+
+        <aside class="workspace__side">
+          <div class="metric-card">
+            <p>Corpus</p>
+            <strong id="document-count">—</strong>
+            <span>technical chunks</span>
+            <div id="domain-counts" class="domain-counts"></div>
+          </div>
+          <div class="metric-card">
+            <p>Observed performance</p>
+            <div class="latency-grid">
+              <div><strong id="p50">—</strong><span>p50</span></div>
+              <div><strong id="p95">—</strong><span>p95</span></div>
+            </div>
+            <small id="sample-size">No completed queries yet</small>
+          </div>
+          <div class="proof-card">
+            <p class="kicker">Built to be measured</p>
+            <h3>Not just a chat wrapper.</h3>
+            <p>Every answer records retrieval configuration, per-stage latency, citation validity, and an asynchronous claim-level faithfulness score.</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer>
+      <span>DevMind RAG</span>
+      <span>Historical evaluation is evidence, not a guarantee.</span>
+    </footer>
+  </div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

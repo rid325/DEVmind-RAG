@@ -47,6 +47,7 @@ def save_query_log(db: Session, request: QueryRequest, result: QueryResponse, st
     db.flush()
     result.log_id = log.id
     stages["logging"] = round((time.perf_counter() - log_start) * 1000, 2)
+    result.stage_latency_ms = stages
     result.latency_ms = round((time.perf_counter() - start) * 1000, 2)
     log.total_latency_ms = result.latency_ms
     log.stage_latency_ms = stages
