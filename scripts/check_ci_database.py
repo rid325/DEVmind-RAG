@@ -43,6 +43,11 @@ def main() -> None:
             raise RuntimeError("CI database role is missing: " + ", ".join(missing))
 
         document_count = db.execute(text("SELECT count(*) FROM documents")).scalar_one()
+        vector_index = db.execute(
+            text("SELECT to_regclass('public.ix_documents_embedding_hnsw')")
+        ).scalar_one()
+        if vector_index is None:
+            raise RuntimeError("CI database is missing ix_documents_embedding_hnsw")
         validate_benchmark(db, HELDOUT_BENCHMARK)
         print(f"CI database ready: {document_count} documents and held-out labels verified")
 

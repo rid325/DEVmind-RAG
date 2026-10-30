@@ -216,7 +216,7 @@ class EnhancedRetrievalTests(unittest.TestCase):
             hybrid.search_hybrid(db, 'attention', use_hyde=True)
         process.assert_awaited_once_with('attention', use_hyde=True, use_expansion=True)
         embed.assert_called_once_with(['Hypothetical passage'])
-        sparse.assert_called_once_with('attention alignment', k=20)
+        sparse.assert_called_once_with('attention alignment', k=10)
         self.assertEqual(rerank.call_args.args[0], 'attention')
 
     def test_endpoint_passes_hyde_flag(self):
