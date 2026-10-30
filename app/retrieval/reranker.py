@@ -5,7 +5,7 @@ from functools import lru_cache
 def get_model():
     from sentence_transformers import CrossEncoder
 
-    return CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=512)
+    return CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=384)
 
 
 def rerank(query: str, hybrid_results: list, top_k: int = 5):

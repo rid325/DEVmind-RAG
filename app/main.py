@@ -39,6 +39,13 @@ async def lifespan(app: FastAPI):
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.commit()
     Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        conn.execute(text("""
+            CREATE INDEX IF NOT EXISTS ix_documents_embedding_hnsw
+            ON documents USING hnsw (embedding vector_cosine_ops)
+            WHERE embedding IS NOT NULL
+        """))
+        conn.commit()
 
 
     db = SessionLocal()
