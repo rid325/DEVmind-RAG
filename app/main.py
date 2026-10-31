@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 from fastapi import FastAPI, Depends, BackgroundTasks, Query, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from openai import APIError, APITimeoutError
@@ -51,6 +52,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DevMind RAG", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://rid325.github.io"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 

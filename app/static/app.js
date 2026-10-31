@@ -6,6 +6,10 @@ const answer = document.querySelector("#answer");
 const sources = document.querySelector("#sources");
 const meta = document.querySelector("#answer-meta");
 const status = document.querySelector("#request-status");
+const API_BASE = window.location.hostname === "rid325.github.io"
+  ? "https://devmind-rag.onrender.com"
+  : "";
+const apiUrl = (path) => `${API_BASE}${path}`;
 
 document.querySelectorAll(".suggestions button").forEach((button) => {
   button.addEventListener("click", () => {
@@ -74,7 +78,7 @@ form.addEventListener("submit", async (event) => {
   setBusy(true);
 
   try {
-    const response = await fetch("/query/stream", {
+    const response = await fetch(apiUrl("/query/stream"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -114,8 +118,8 @@ form.addEventListener("submit", async (event) => {
 
 async function hydrateStats() {
   const [stats, metrics] = await Promise.all([
-    fetch("/stats").then((response) => response.ok ? response.json() : null),
-    fetch("/metrics").then((response) => response.ok ? response.json() : null),
+    fetch(apiUrl("/stats")).then((response) => response.ok ? response.json() : null),
+    fetch(apiUrl("/metrics")).then((response) => response.ok ? response.json() : null),
   ]);
   if (stats) {
     document.querySelector("#document-count").textContent = stats.total_documents.toLocaleString();
