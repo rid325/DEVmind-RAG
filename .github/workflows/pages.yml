@@ -1,5 +1,7 @@
 name: Deploy instant demo page
 
+# Publishes the static shell separately so the landing page never cold-starts.
+
 on:
   push:
     branches: [main]
