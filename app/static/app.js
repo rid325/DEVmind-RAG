@@ -124,6 +124,7 @@ async function hydrateStats() {
   if (stats) {
     document.querySelector("#document-count").textContent = stats.total_documents.toLocaleString();
     const counts = document.querySelector("#domain-counts");
+    counts.replaceChildren();
     Object.entries(stats.by_domain).forEach(([domain, count]) => {
       const chip = document.createElement("span");
       chip.textContent = `${domain} ${count}`;
