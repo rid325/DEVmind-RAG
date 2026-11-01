@@ -374,7 +374,10 @@ A document appearing only first in one list gets about `0.01639`. Shared high-ra
 
 ### Exact candidate flow
 
-With reranking enabled, `fetch_k = max(20, k)`. With reranking disabled, `fetch_k = k`.
+With reranking enabled, `fetch_k = max(10, k)`. With reranking disabled, `fetch_k = k`.
+Ten candidates keep the second-stage model focused while avoiding the near-linear
+CPU cost of scoring twenty passages. Dense retrieval uses a partial HNSW cosine
+index over embedded rows; startup creates it when the database role owns the schema.
 
 For the default request for five reranked results:
 

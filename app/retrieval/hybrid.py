@@ -10,6 +10,8 @@ from app.embeddings import get_embeddings
 from app.retrieval import reranker
 from app.retrieval.query_understanding import EnhancedQuery, process_query
 
+RERANK_CANDIDATES = 10
+
 def rrf_merge(dense_results: list[tuple[int, float]], sparse_results: list[tuple[int, float]], rrf_k: int = 60) -> list[tuple[int, float]]:
     rrf_scores = {}
 
@@ -28,7 +30,7 @@ def search_hybrid(db: Session, query: str, k: int = 5, rerank: bool = True, use_
     if not query.strip() or k <= 0:
         return []
 
-    fetch_k = max(20, k) if rerank else k
+    fetch_k = max(RERANK_CANDIDATES, k) if rerank else k
     # FastAPI runs this synchronous search in a worker thread.
     if enhanced is None:
         enhanced = asyncio.run(process_query(query, use_hyde=use_hyde, use_expansion=use_expansion))

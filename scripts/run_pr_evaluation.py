@@ -115,6 +115,7 @@ def run_evaluation(latency_ceiling_ms):
     from app.database import SessionLocal
     from app.evaluation.comparator import compare_experiments
     from app.evaluation.experiment_runner import ExperimentRequest, create_experiment, run_experiment
+    from app.models import Experiment
 
     stamp = os.getenv("GITHUB_RUN_ID", datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S"))
     revision = os.getenv("PR_HEAD_SHA", "local")
@@ -122,22 +123,28 @@ def run_evaluation(latency_ceiling_ms):
         ("baseline", {"use_hyde": False, "use_reranking": False, "use_expansion": False}),
         ("full", {"use_hyde": True, "use_reranking": True, "use_expansion": True}),
     )
-    experiments = []
-    with SessionLocal() as db:
-        for label, config in configs:
+    experiment_ids = []
+    for label, config in configs:
+        with SessionLocal() as db:
             experiment = create_experiment(db, ExperimentRequest(
                 name=f"pr-{stamp}-{label}", benchmark="heldout_20", config=config,
                 description=f"GitHub Actions baseline-versus-full release gate at {revision}",
             ))
-            run_experiment(experiment.id)
-            db.expire_all()
-            experiment = db.get(type(experiment), experiment.id)
+            experiment_id = experiment.id
+
+        # Model evaluation can take several minutes. Do not hold a Neon
+        # connection idle across it; reconnect when the result is ready.
+        run_experiment(experiment_id)
+        with SessionLocal() as db:
+            experiment = db.get(Experiment, experiment_id)
             if experiment.status not in {"complete", "complete_with_errors"}:
                 raise RuntimeError(f"{label} experiment ended with status {experiment.status}: {experiment.error}")
-            experiments.append(experiment)
+        experiment_ids.append(experiment_id)
 
+    with SessionLocal() as db:
+        experiments = [db.get(Experiment, experiment_id) for experiment_id in experiment_ids]
         comparison = compare_experiments(
-            db, experiments[0].id, experiments[1].id, latency_ceiling_ms
+            db, experiment_ids[0], experiment_ids[1], latency_ceiling_ms
         )
         return {
             "recorded_at": datetime.now(timezone.utc).isoformat(),
